@@ -27,6 +27,14 @@
             animation: float 3s ease-in-out infinite;
         }
 
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.5); }
+            50% { box-shadow: 0 0 50px rgba(220, 38, 38, 0.9); }
+        }
+        .animate-pulse-red {
+            animation: pulse-red 2s infinite;
+        }
+
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             20%, 60% { transform: translateX(-5px); }
@@ -95,8 +103,8 @@
             </div>
             <h1 class="text-xl md:text-2xl text-indigo-100 tracking-wide">Mansão Matemática</h1>
         </div>
-        <div id="progress-container" class="hidden flex flex-col items-end gap-1 w-1/3 max-w-[200px]">
-            <span id="progress-text" class="text-slate-300 font-bold text-sm">Sala 1 / 28</span>
+        <div id="progress-container" class="hidden flex flex-col items-end gap-1 w-1/2 max-w-[250px]">
+            <span id="progress-text" class="text-slate-300 font-bold text-sm">Sala 1 / 22</span>
             <div class="w-full bg-slate-700 h-3 rounded-full overflow-hidden border border-slate-600">
                 <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full w-0 transition-all duration-500"></div>
             </div>
@@ -123,20 +131,13 @@
     <script>
         // Game State
         let currentStage = 0;
-        const totalStages = 28;
-
-        // Room 1 State (Cofre Dificultado)
+        
+        // Stages 1 to 22 (Base Game)
         let safeDigits = [0, 0, 0, 0];
         const correctDigits = [9, 8, 6, 3]; 
-
-        // Room 2 State (Pizza)
         let pizzaSlices = [false, false, false, false, false, false, false, false]; 
-
-        // Room 3 State (Perimeter Grid)
         let outerLinesActive = 0;
         const totalOuterLines = 16; 
-
-        // Existing Rooms States
         let cauldronVolume = 0;
         let clockTime = { h: 14, m: 45 };
         let chestMoney = 0;
@@ -149,35 +150,41 @@
         let doorDials = [0, 0, 0, 0];
         const correctDoorDials = [3, 4, 5, 6];
         let multiplesState = Array(12).fill(false); 
-
-        // Rooms 17 to 20 States
-        let measuresPool = [
-            {id: 1, text: '150 cm', val: 1.5},
-            {id: 2, text: '0,5 km', val: 500},
-            {id: 3, text: '2 m', val: 2},
-            {id: 4, text: '2500 mm', val: 2.5}
-        ];
+        let measuresPool = [{id: 1, text: '150 cm', val: 1.5},{id: 2, text: '0,5 km', val: 500},{id: 3, text: '2 m', val: 2},{id: 4, text: '2500 mm', val: 2.5}];
         let placedMeasures = [null, null, null, null];
         let selectedMeasure = null; 
         let chartBars = [0, 0, 0]; 
         let padLockPath = []; 
         let bossDials = [0, 0]; 
 
-        // New Rooms States (21 to 28)
-        let batteryLevel = 0; // Room 22
-        let decSeqWhole = 0, decSeqFrac = 0; // Room 23
-        let chestCoins = [0, 0, 0, 0]; let coinsToDistribute = 24; // Room 24
-        let tempValue = 3; // Room 27
-        let parenDials = [0, 0, 0]; // Room 28
+        // Stages 24 to 28 (Desafio Secreto - Hard Mode Prova)
+        let hardQ1Input = "";
+        let hardQ2Dials = [0, 0];
+        let hardQ3Input = "";
+        let hardQ4Water = 0;
+        let hardQ5Dials = [0, 0, 0];
 
         // Utility to update stars/progress
         function updateProgress() {
             const progress = document.getElementById('progress-container');
-            if (currentStage > 0 && currentStage <= totalStages) {
+            const pText = document.getElementById('progress-text');
+            const pBar = document.getElementById('progress-bar');
+            
+            if (currentStage > 0 && currentStage <= 22) {
                 progress.classList.remove('hidden');
-                document.getElementById('progress-text').innerText = `Sala ${currentStage} / ${totalStages}`;
-                const pct = ((currentStage - 1) / totalStages) * 100;
-                document.getElementById('progress-bar').style.width = `${pct}%`;
+                pText.innerText = `Sala ${currentStage} / 22`;
+                pBar.style.width = `${(currentStage / 22) * 100}%`;
+                pBar.className = "bg-gradient-to-r from-indigo-500 to-purple-500 h-full transition-all duration-500";
+            } else if (currentStage === 23) {
+                // Transition screen, hide progress or show special
+                progress.classList.add('hidden');
+            } else if (currentStage >= 24 && currentStage <= 28) {
+                progress.classList.remove('hidden');
+                let hardStageNum = currentStage - 23;
+                pText.innerText = `Desafio Secreto ${hardStageNum} / 5`;
+                pText.classList.replace('text-slate-300', 'text-red-400');
+                pBar.style.width = `${(hardStageNum / 5) * 100}%`;
+                pBar.className = "bg-gradient-to-r from-red-600 to-orange-500 h-full transition-all duration-500";
             } else {
                 progress.classList.add('hidden');
             }
@@ -242,7 +249,6 @@
             cubeVertices = Array(8).fill(false);
             doorDials = [0, 0, 0, 0];
             multiplesState = Array(12).fill(false);
-            
             measuresPool = [{id: 1, text: '150 cm', val: 1.5}, {id: 2, text: '0,5 km', val: 500}, {id: 3, text: '2 m', val: 2}, {id: 4, text: '2500 mm', val: 2.5}];
             placedMeasures = [null, null, null, null];
             selectedMeasure = null;
@@ -250,12 +256,13 @@
             padLockPath = [];
             bossDials = [0, 0];
 
-            batteryLevel = 0;
-            decSeqWhole = 0; decSeqFrac = 0;
-            chestCoins = [0, 0, 0, 0]; coinsToDistribute = 24;
-            tempValue = 3;
-            parenDials = [0, 0, 0];
+            hardQ1Input = "";
+            hardQ2Dials = [0, 0];
+            hardQ3Input = "";
+            hardQ4Water = 0;
+            hardQ5Dials = [0, 0, 0];
             
+            document.getElementById('progress-text').classList.replace('text-red-400', 'text-slate-300');
             renderStage();
         }
 
@@ -292,12 +299,15 @@
                 case 20: renderRoom20(); break;
                 case 21: renderRoom21(); break;
                 case 22: renderRoom22(); break;
-                case 23: renderRoom23(); break;
-                case 24: renderRoom24(); break;
-                case 25: renderRoom25(); break;
-                case 26: renderRoom26(); break;
-                case 27: renderRoom27(); break;
-                case 28: renderRoom28(); break;
+                // Transition
+                case 23: renderSecretTransition(); break;
+                // Hard Mode
+                case 24: renderHardQ1(); break;
+                case 25: renderHardQ2(); break;
+                case 26: renderHardQ3(); break;
+                case 27: renderHardQ4(); break;
+                case 28: renderHardQ5(); break;
+                // Win
                 case 29: renderWin(); break;
             }
         }
@@ -311,10 +321,10 @@
                         Fuga da Mansão Matemática
                     </h1>
                     <p class="text-xl md:text-2xl text-slate-300 mb-10 leading-relaxed font-bold">
-                        A Edição Definitiva! (28 Desafios)
+                        22 Fases + Desafio Secreto Final
                     </p>
                     <p class="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed">
-                        Você precisará de raciocínio afiado para superar os 28 enigmas do 5º ano. Frações, geometria, decimais e lógica esperam por você!
+                        Você precisará de raciocínio afiado para superar os 22 enigmas do 5º ano e chegar à sala secreta final.
                     </p>
                     <button onclick="nextStage()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-title text-2xl py-4 px-12 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)] hover:shadow-[0_0_30px_rgba(79,70,229,0.8)] transition-all transform hover:scale-105 active:scale-95">
                         ENTRAR NA MANSÃO ➔
@@ -323,7 +333,7 @@
             `;
         }
 
-        // ======================= SALAS 1 a 20 (EXISTENTES) ======================= //
+        // ======================= SALAS 1 a 22 (REGULARES) ======================= //
 
         function renderRoom1() {
             let dialsHTML = '';
@@ -366,27 +376,24 @@
             checkRoom1();
         }
         function checkRoom1() {
-            const isCorrect = safeDigits.every((val, index) => val === correctDigits[index]);
-            if (isCorrect) {
+            if (safeDigits.every((val, index) => val === correctDigits[index])) {
                 document.getElementById('room1-error').classList.add('opacity-0');
                 const safeBox = document.getElementById('safe-container');
                 safeBox.classList.add('unlock-anim', 'border-green-500');
                 safeBox.style.boxShadow = '0 0 50px rgba(34, 197, 94, 0.6)';
-                setTimeout(() => showModal("Cofre Aberto!", "Incrível! 9.863 é o maior número ímpar que pode ser formado, pois precisa terminar no 3. Você conseguiu a primeira chave!", "🗝️", "Próxima Sala ➔"), 800);
+                setTimeout(() => showModal("Cofre Aberto!", "Incrível! 9.863 é o maior número ímpar possível.", "🗝️", "Próxima Sala ➔"), 800);
             }
         }
 
         function renderRoom2() {
             let slicesSVG = '';
             for(let i=0; i<8; i++) {
-                const startAngle = (i * 45) * Math.PI / 180;
-                const endAngle = ((i+1) * 45) * Math.PI / 180;
+                const startAngle = (i * 45) * Math.PI / 180; const endAngle = ((i+1) * 45) * Math.PI / 180;
                 const x1 = Math.sin(startAngle) * 100; const y1 = -Math.cos(startAngle) * 100;
                 const x2 = Math.sin(endAngle) * 100; const y2 = -Math.cos(endAngle) * 100;
-                const pathData = `M0,0 L${x1},${y1} A100,100 0 0,1 ${x2},${y2} Z`;
                 slicesSVG += `
                     <g onclick="togglePizza(${i})" class="pizza-slice ${pizzaSlices[i] ? 'eaten' : ''}" id="slice-${i}">
-                        <path d="${pathData}" fill="#d97706" stroke="#b45309" stroke-width="2"/>
+                        <path d="M0,0 L${x1},${y1} A100,100 0 0,1 ${x2},${y2} Z" fill="#d97706" stroke="#b45309" stroke-width="2"/>
                         <path d="M0,0 L${x1*0.85},${y1*0.85} A85,85 0 0,1 ${x2*0.85},${y2*0.85} Z" fill="#fbbf24"/>
                         <circle cx="${Math.sin(startAngle + 0.3)*60}" cy="${-Math.cos(startAngle + 0.3)*60}" r="8" fill="#ef4444" />
                     </g>
@@ -394,15 +401,11 @@
             }
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
-                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 shadow-2xl text-center mb-8 w-full relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-500 to-yellow-500"></div>
+                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 shadow-2xl text-center mb-8 w-full">
                         <h2 class="text-3xl text-orange-400 font-title mb-4 flex items-center justify-center gap-3"><span class="text-4xl">👻</span> A Cantina Fantasma</h2>
-                        <p class="text-lg md:text-xl text-slate-200">
-                            Um fantasma faminto bloqueia a passagem! Ele pediu uma pizza de 8 pedaços, mas quer que você deixe <span class="text-yellow-400 font-bold">exatamente a METADE</span> para ele.<br>
-                            Clique nas fatias para simular o que você vai comer.
-                        </p>
+                        <p class="text-lg md:text-xl text-slate-200">Deixe <span class="text-yellow-400 font-bold">exatamente a METADE</span> da pizza para o fantasma.</p>
                     </div>
-                    <div class="relative w-64 h-64 md:w-80 md:h-80 mb-8 bg-slate-800 rounded-full shadow-[0_0_40px_rgba(0,0,0,0.5)] border-4 border-slate-700 flex items-center justify-center">
+                    <div class="relative w-64 h-64 md:w-80 md:h-80 mb-8 bg-slate-800 rounded-full shadow-[0_0_40px_rgba(0,0,0,0.5)] flex items-center justify-center">
                         <svg viewBox="-110 -110 220 220" class="w-full h-full drop-shadow-xl" id="pizza-container">${slicesSVG}</svg>
                         <div class="absolute w-4 h-4 bg-slate-900 rounded-full"></div>
                     </div>
@@ -413,97 +416,54 @@
         }
         function togglePizza(index) {
             pizzaSlices[index] = !pizzaSlices[index];
-            const sliceEl = document.getElementById(`slice-${index}`);
-            if (pizzaSlices[index]) sliceEl.classList.add('eaten');
-            else sliceEl.classList.remove('eaten');
+            const el = document.getElementById(`slice-${index}`);
+            if (pizzaSlices[index]) el.classList.add('eaten'); else el.classList.remove('eaten');
             document.getElementById('room2-error').classList.add('opacity-0');
         }
         function checkRoom2() {
-            const eatenCount = pizzaSlices.filter(v => v).length;
-            if (eatenCount === 4) {
+            if (pizzaSlices.filter(v => v).length === 4) {
                 document.getElementById('pizza-container').classList.add('unlock-anim');
-                setTimeout(() => showModal("Fantasma Satisfeito!", "Você acertou! Deixar 4 pedaços de 8 (4/8) é exatamente o mesmo que deixar a METADE (1/2) da pizza.", "🍕", "Próxima Sala ➔"), 600);
+                setTimeout(() => showModal("Satisfeito!", "Você deixou a METADE (4/8 = 1/2) da pizza.", "🍕", "Próxima Sala ➔"), 600);
             } else {
-                const errorText = document.getElementById('room2-error');
-                errorText.innerText = eatenCount < 4 ? "Você não comeu a metade ainda. O fantasma quer exatamente meia pizza!" : "Você comeu demais! O fantasma ficou furioso.";
-                errorText.classList.remove('opacity-0');
-                const pizzaC = document.getElementById('pizza-container');
-                pizzaC.classList.add('shake');
-                setTimeout(() => pizzaC.classList.remove('shake'), 400);
+                document.getElementById('room2-error').classList.remove('opacity-0');
+                document.getElementById('pizza-container').classList.add('shake');
+                setTimeout(() => document.getElementById('pizza-container').classList.remove('shake'), 400);
             }
         }
 
         function renderRoom3() {
             const cols = 5; const rows = 3; const cellSize = 80;
-            const width = cols * cellSize; const height = rows * cellSize;
             let linesSVG = '';
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    linesSVG += `<rect x="${c*cellSize}" y="${r*cellSize}" width="${cellSize}" height="${cellSize}" fill="#1e293b" stroke="#0f172a" stroke-width="2" />`;
-                }
-            }
-            for(let r=0; r<=rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    const isOuter = (r === 0 || r === rows);
-                    const id = `h-${r}-${c}`;
-                    linesSVG += `<line x1="${c*cellSize}" y1="${r*cellSize}" x2="${(c+1)*cellSize}" y2="${r*cellSize}" class="grid-line" id="${id}" data-type="${isOuter ? 'outer' : 'inner'}" data-active="false" onclick="toggleGridLine('${id}')" />`;
-                }
-            }
-            for(let c=0; c<=cols; c++) {
-                for(let r=0; r<rows; r++) {
-                    const isOuter = (c === 0 || c === cols);
-                    const id = `v-${c}-${r}`;
-                    linesSVG += `<line x1="${c*cellSize}" y1="${r*cellSize}" x2="${c*cellSize}" y2="${(r+1)*cellSize}" class="grid-line" id="${id}" data-type="${isOuter ? 'outer' : 'inner'}" data-active="false" onclick="toggleGridLine('${id}')" />`;
-                }
-            }
+            for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) linesSVG += `<rect x="${c*cellSize}" y="${r*cellSize}" width="${cellSize}" height="${cellSize}" fill="#1e293b" stroke="#0f172a" stroke-width="2" />`;
+            for(let r=0; r<=rows; r++) for(let c=0; c<cols; c++) linesSVG += `<line x1="${c*cellSize}" y1="${r*cellSize}" x2="${(c+1)*cellSize}" y2="${r*cellSize}" class="grid-line" id="h-${r}-${c}" data-type="${(r===0||r===rows)?'outer':'inner'}" data-active="false" onclick="toggleGridLine('h-${r}-${c}')" />`;
+            for(let c=0; c<=cols; c++) for(let r=0; r<rows; r++) linesSVG += `<line x1="${c*cellSize}" y1="${r*cellSize}" x2="${c*cellSize}" y2="${(r+1)*cellSize}" class="grid-line" id="v-${c}-${r}" data-type="${(c===0||c===cols)?'outer':'inner'}" data-active="false" onclick="toggleGridLine('v-${c}-${r}')" />`;
             container.innerHTML = `
                 <div class="w-full max-w-4xl flex flex-col items-center">
-                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 shadow-2xl text-center mb-6 w-full relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-400 to-emerald-500"></div>
+                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 shadow-2xl text-center mb-6 w-full">
                         <h2 class="text-3xl text-teal-300 font-title mb-4 flex items-center justify-center gap-3"><span class="text-4xl">⚡</span> O Campo de Força</h2>
-                        <p class="text-lg md:text-xl text-slate-200">
-                            A saída está além deste terreno retangular de <span class="text-teal-400 font-bold">5m de comprimento por 3m de largura</span>.<br>
-                            Para ativar o portal, clique nas linhas para energizar <strong class="text-yellow-400 uppercase border-b-2 border-yellow-400">apenas o perímetro</strong> do terreno!
-                        </p>
+                        <p class="text-lg md:text-xl text-slate-200">O terreno tem 5m de comprimento por 3m de largura. Clique nas linhas para energizar <strong class="text-yellow-400 uppercase">apenas o perímetro</strong>.</p>
                     </div>
-                    <div class="flex flex-col items-center bg-slate-900 p-4 md:p-8 rounded-3xl border-4 border-slate-700 shadow-2xl">
-                        <div class="flex justify-between w-full px-4 mb-4 text-slate-400 font-bold text-sm uppercase tracking-wider">
-                            <span>Energizados: <span id="perimeter-counter" class="text-teal-400 text-lg">0</span> / 16</span>
-                        </div>
-                        <div class="relative overflow-x-auto w-full flex justify-center py-4">
-                            <svg width="${width}" height="${height}" viewBox="-10 -10 ${width+20} ${height+20}" class="max-w-full drop-shadow-2xl" id="grid-svg">${linesSVG}</svg>
-                        </div>
+                    <div class="flex flex-col items-center bg-slate-900 p-4 rounded-3xl border-4 border-slate-700 shadow-2xl">
+                        <div class="flex justify-between w-full px-4 mb-4 text-slate-400 font-bold">Energizados: <span id="perimeter-counter" class="text-teal-400 text-lg">0</span> / 16</div>
+                        <div class="relative overflow-x-auto w-full flex justify-center py-4"><svg width="${cols*cellSize}" height="${rows*cellSize}" viewBox="-10 -10 ${(cols*cellSize)+20} ${(rows*cellSize)+20}" class="max-w-full" id="grid-svg">${linesSVG}</svg></div>
                     </div>
-                    <div id="room3-error" class="mt-4 bg-red-900/50 border border-red-500 text-red-200 px-6 py-3 rounded-lg font-bold text-lg opacity-0 transition-opacity flex items-center gap-2">
-                        <span>⚠️</span> Cuidado! Você clicou na área interna. O PERÍMETRO é apenas o contorno (borda)!
-                    </div>
+                    <div id="room3-error" class="mt-4 bg-red-900/50 border border-red-500 text-red-200 px-6 py-3 rounded-lg font-bold opacity-0 transition-opacity flex items-center gap-2"><span>⚠️</span> Cuidado! Você clicou na área interna.</div>
                 </div>
             `;
         }
         function toggleGridLine(id) {
             const line = document.getElementById(id);
-            const type = line.getAttribute('data-type');
-            if (type === 'inner') {
-                line.classList.add('active-inner');
-                document.getElementById('room3-error').classList.remove('opacity-0');
-                document.getElementById('grid-svg').classList.add('shake');
-                setTimeout(() => {
-                    line.classList.remove('active-inner');
-                    document.getElementById('grid-svg').classList.remove('shake');
-                    setTimeout(() => document.getElementById('room3-error').classList.add('opacity-0'), 2000);
-                }, 500);
-                return;
+            if (line.getAttribute('data-type') === 'inner') {
+                line.classList.add('active-inner'); document.getElementById('room3-error').classList.remove('opacity-0'); document.getElementById('grid-svg').classList.add('shake');
+                setTimeout(() => { line.classList.remove('active-inner'); document.getElementById('grid-svg').classList.remove('shake'); setTimeout(() => document.getElementById('room3-error').classList.add('opacity-0'), 2000); }, 500); return;
             }
-            if (line.getAttribute('data-active') === 'true') {
-                line.setAttribute('data-active', 'false'); line.classList.remove('active-outer'); outerLinesActive--;
-            } else {
-                line.setAttribute('data-active', 'true'); line.classList.add('active-outer'); outerLinesActive++;
-            }
+            if (line.getAttribute('data-active') === 'true') { line.setAttribute('data-active', 'false'); line.classList.remove('active-outer'); outerLinesActive--; }
+            else { line.setAttribute('data-active', 'true'); line.classList.add('active-outer'); outerLinesActive++; }
             document.getElementById('perimeter-counter').innerText = outerLinesActive;
             if (outerLinesActive === totalOuterLines) {
                 document.getElementById('grid-svg').classList.add('unlock-anim');
                 document.querySelectorAll('.grid-line[data-type="outer"]').forEach(el => { el.style.stroke = '#2dd4bf'; el.style.filter = 'drop-shadow(0 0 12px #2dd4bf)'; });
-                setTimeout(() => showModal("Portal Ativado!", "Genial! Você circulou exatamente a borda. 5 + 5 + 3 + 3 = 16 metros de perímetro.", "🌌", "Próxima Sala ➔"), 1000);
+                setTimeout(() => showModal("Portal Ativado!", "Você circulou a borda (16 metros de perímetro).", "🌌", "Próxima Sala ➔"), 1000);
             }
         }
 
@@ -512,15 +472,13 @@
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-purple-400 font-title mb-4 flex items-center justify-center gap-2"><span>🧪</span> Laboratório de Poções</h2>
-                        <p class="text-lg text-slate-200">
-                            O caldeirão precisa de exatamente <span class="text-yellow-400 font-bold">1 Litro (1000 ml)</span> para revelar a passagem.
-                        </p>
+                        <p class="text-lg text-slate-200">Misture as medidas até formar exatamente <span class="text-yellow-400 font-bold">1 Litro (1000 ml)</span> no caldeirão.</p>
                     </div>
                     <div class="flex flex-wrap justify-center gap-4 mb-8">
-                        <button onclick="addVolume(500)" class="bg-purple-700 hover:bg-purple-600 border-2 border-purple-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-transform active:scale-95">+ 500 ml</button>
-                        <button onclick="addVolume(250)" class="bg-indigo-700 hover:bg-indigo-600 border-2 border-indigo-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-transform active:scale-95">+ 250 ml</button>
-                        <button onclick="addVolume(100)" class="bg-blue-700 hover:bg-blue-600 border-2 border-blue-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-transform active:scale-95">+ 100 ml</button>
-                        <button onclick="cauldronVolume = 0; renderRoom4()" class="bg-slate-700 hover:bg-slate-600 border-2 border-slate-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-transform active:scale-95">Esvaziar 🗑️</button>
+                        <button onclick="addVolume(500)" class="bg-purple-700 hover:bg-purple-600 border-2 border-purple-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg">+ 500 ml</button>
+                        <button onclick="addVolume(250)" class="bg-indigo-700 hover:bg-indigo-600 border-2 border-indigo-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg">+ 250 ml</button>
+                        <button onclick="addVolume(100)" class="bg-blue-700 hover:bg-blue-600 border-2 border-blue-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg">+ 100 ml</button>
+                        <button onclick="cauldronVolume = 0; renderRoom4()" class="bg-slate-700 hover:bg-slate-600 border-2 border-slate-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg">Esvaziar</button>
                     </div>
                     <div class="relative w-48 h-56 border-b-8 border-x-8 border-slate-600 rounded-b-3xl overflow-hidden bg-slate-900 shadow-[0_0_40px_rgba(168,85,247,0.3)]">
                         <div class="absolute bottom-0 w-full bg-gradient-to-t from-purple-600 to-fuchsia-500 transition-all duration-500 opacity-80" style="height: ${cauldronVolume/10}%"></div>
@@ -532,13 +490,9 @@
         }
         function addVolume(v) {
             cauldronVolume += v;
-            if(cauldronVolume > 1000) {
-                document.getElementById('room4-error').classList.remove('opacity-0');
-                setTimeout(() => { cauldronVolume = 0; renderRoom4(); }, 1500);
-            } else if(cauldronVolume === 1000) {
-                renderRoom4();
-                setTimeout(() => showModal("Poção Pronta!", "Perfeito! Você somou as medidas até formar exatamente 1 Litro (1000 ml).", "🔮", "Próxima Sala ➔"), 600);
-            } else { renderRoom4(); }
+            if(cauldronVolume > 1000) { document.getElementById('room4-error').classList.remove('opacity-0'); setTimeout(() => { cauldronVolume = 0; renderRoom4(); }, 1500); }
+            else if(cauldronVolume === 1000) { renderRoom4(); setTimeout(() => showModal("Poção Pronta!", "Perfeito! 1 Litro = 1000 ml.", "🔮", "Próxima Sala ➔"), 600); }
+            else { renderRoom4(); }
         }
 
         function renderRoom5() {
@@ -546,9 +500,7 @@
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-blue-300 font-title mb-4 flex items-center justify-center gap-2"><span>⏱️</span> O Relógio da Estação</h2>
-                        <p class="text-lg text-slate-200">
-                            O trem partiu às <span class="text-yellow-400 font-bold">14h45</span> e a viagem durou <span class="text-teal-400 font-bold">1 hora e 35 minutos</span>.<br>Ajuste o relógio para o horário exato de chegada.
-                        </p>
+                        <p class="text-lg text-slate-200">O trem partiu às <span class="text-yellow-400 font-bold">14h45</span> e a viagem durou <span class="text-teal-400 font-bold">1 hora e 35 minutos</span>. Que horas ele chegou?</p>
                     </div>
                     <div class="flex items-center gap-4 bg-slate-900 p-8 rounded-3xl border-4 border-slate-700 shadow-2xl">
                         <div class="flex flex-col items-center">
@@ -564,7 +516,7 @@
                         </div>
                     </div>
                     <button onclick="checkTime()" class="mt-8 bg-blue-600 hover:bg-blue-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Confirmar Horário</button>
-                    <div id="room5-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Ainda não é essa hora! Cuidado com os minutos que viram hora (60m = 1h).</div>
+                    <div id="room5-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Errado! Lembre que 60 min formam 1 hora.</div>
                 </div>
             `;
         }
@@ -575,12 +527,8 @@
             renderRoom5();
         }
         function checkTime() {
-            if (clockTime.h === 16 && clockTime.m === 20) {
-                showModal("Na hora certa!", "Exato! 14h45 + 1 hora = 15h45. Mais 35 minutos = 16h20.", "🚂", "Próxima Sala ➔");
-            } else {
-                document.getElementById('room5-error').classList.remove('opacity-0');
-                setTimeout(() => document.getElementById('room5-error').classList.add('opacity-0'), 3500);
-            }
+            if (clockTime.h === 16 && clockTime.m === 20) { showModal("Na hora certa!", "Exato! 14h45 + 1h = 15h45. + 35m = 16h20.", "🚂", "Próxima Sala ➔"); }
+            else { document.getElementById('room5-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room5-error').classList.add('opacity-0'), 3500); }
         }
 
         function renderRoom6() {
@@ -588,30 +536,26 @@
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-emerald-400 font-title mb-4 flex items-center justify-center gap-2"><span>💰</span> O Pedágio da Ponte</h2>
-                        <p class="text-lg text-slate-200">A catraca cobra exatamente <span class="text-yellow-400 font-bold">R$ 4,50</span>. Insira as moedas até atingir o valor exato!</p>
+                        <p class="text-lg text-slate-200">A catraca cobra exatamente <span class="text-yellow-400 font-bold">R$ 4,50</span>. Insira moedas até atingir o valor!</p>
                     </div>
                     <div class="text-5xl font-title text-emerald-300 bg-slate-900 px-8 py-4 rounded-2xl border-2 border-emerald-900 mb-8 shadow-inner">
                         R$ ${chestMoney.toFixed(2).replace('.', ',')}
                     </div>
                     <div class="flex flex-wrap gap-4 md:gap-8 justify-center">
-                        <button onclick="addMoney(1.00)" class="w-24 h-24 bg-yellow-600 rounded-full border-4 border-yellow-400 shadow-[0_5px_15px_rgba(0,0,0,0.5)] flex items-center justify-center text-xl font-bold hover:scale-105 active:scale-95 transition-transform text-yellow-100">R$ 1,00</button>
-                        <button onclick="addMoney(0.50)" class="w-20 h-20 bg-slate-400 rounded-full border-4 border-slate-300 shadow-[0_5px_15px_rgba(0,0,0,0.5)] flex items-center justify-center text-lg font-bold hover:scale-105 active:scale-95 transition-transform mt-2 text-slate-800">R$ 0,50</button>
-                        <button onclick="addMoney(0.25)" class="w-16 h-16 bg-yellow-700 rounded-full border-4 border-yellow-500 shadow-[0_5px_15px_rgba(0,0,0,0.5)] flex items-center justify-center text-sm font-bold hover:scale-105 active:scale-95 transition-transform mt-4 text-yellow-100">R$ 0,25</button>
+                        <button onclick="addMoney(1.00)" class="w-24 h-24 bg-yellow-600 rounded-full border-4 border-yellow-400 flex items-center justify-center text-xl font-bold shadow-lg text-yellow-100 active:scale-95">R$ 1,00</button>
+                        <button onclick="addMoney(0.50)" class="w-20 h-20 bg-slate-400 rounded-full border-4 border-slate-300 flex items-center justify-center text-lg font-bold shadow-lg mt-2 text-slate-800 active:scale-95">R$ 0,50</button>
+                        <button onclick="addMoney(0.25)" class="w-16 h-16 bg-yellow-700 rounded-full border-4 border-yellow-500 flex items-center justify-center text-sm font-bold shadow-lg mt-4 text-yellow-100 active:scale-95">R$ 0,25</button>
                     </div>
-                    <div class="mt-8"><button onclick="chestMoney = 0; renderRoom6()" class="text-slate-400 underline hover:text-white">Pegar moedas de volta (Zerar)</button></div>
-                    <div id="room6-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Passou do valor! A máquina devolveu o dinheiro.</div>
+                    <div class="mt-8"><button onclick="chestMoney = 0; renderRoom6()" class="text-slate-400 underline hover:text-white">Zerar e tentar de novo</button></div>
+                    <div id="room6-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Passou do valor! A máquina devolveu.</div>
                 </div>
             `;
         }
         function addMoney(val) {
             chestMoney += val;
-            if (chestMoney > 4.50) {
-                document.getElementById('room6-error').classList.remove('opacity-0');
-                setTimeout(() => { chestMoney = 0; renderRoom6(); }, 1500);
-            } else if (Math.abs(chestMoney - 4.50) < 0.01) {
-                renderRoom6();
-                setTimeout(() => showModal("Pagamento Aceito!", "Catraca liberada. Você entende de sistema monetário!", "🪙", "Próxima Sala ➔"), 500);
-            } else { renderRoom6(); }
+            if (chestMoney > 4.50) { document.getElementById('room6-error').classList.remove('opacity-0'); setTimeout(() => { chestMoney = 0; renderRoom6(); }, 1500); }
+            else if (Math.abs(chestMoney - 4.50) < 0.01) { renderRoom6(); setTimeout(() => showModal("Pagamento Aceito!", "Catraca liberada.", "🪙", "Próxima Sala ➔"), 500); }
+            else { renderRoom6(); }
         }
 
         function renderRoom7() {
@@ -619,33 +563,25 @@
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-pink-400 font-title mb-4 flex items-center justify-center gap-2"><span>🚪</span> A Porta Gigante</h2>
-                        <p class="text-lg text-slate-200">A senha numérica é igual à <span class="text-pink-400 font-bold">ÁREA</span> de um salão com <span class="text-yellow-400 font-bold">15m</span> de comprimento e <span class="text-yellow-400 font-bold">12m</span> de largura.</p>
+                        <p class="text-lg text-slate-200">A senha numérica é a <span class="text-pink-400 font-bold">ÁREA</span> de um salão de <span class="text-yellow-400 font-bold">15m</span> de comprimento por <span class="text-yellow-400 font-bold">12m</span> de largura.</p>
                     </div>
                     <div class="bg-slate-900 p-6 rounded-3xl border-4 border-slate-700 w-64 shadow-2xl">
-                        <div class="bg-slate-800 h-16 rounded-xl mb-4 flex items-center justify-end px-4 text-3xl font-title text-pink-300 border-2 border-slate-950 shadow-inner overflow-hidden">${areaKeypad || "_"}</div>
+                        <div class="bg-slate-800 h-16 rounded-xl mb-4 flex items-center justify-end px-4 text-3xl font-title text-pink-300 border-2 border-slate-950 overflow-hidden">${areaKeypad || "_"}</div>
                         <div class="grid grid-cols-3 gap-2">
-                            ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="typeArea('${n}')" class="bg-slate-700 hover:bg-pink-600 text-white text-2xl font-bold py-3 rounded-lg transition-colors active:scale-95">${n}</button>`).join('')}
-                            <button onclick="typeArea('C')" class="bg-red-900/50 hover:bg-red-600 text-red-200 text-xl font-bold py-3 rounded-lg transition-colors active:scale-95">C</button>
-                            <button onclick="typeArea('0')" class="bg-slate-700 hover:bg-pink-600 text-white text-2xl font-bold py-3 rounded-lg transition-colors active:scale-95">0</button>
-                            <button onclick="checkArea()" class="bg-emerald-900/50 hover:bg-emerald-600 text-emerald-200 text-xl font-bold py-3 rounded-lg transition-colors active:scale-95">OK</button>
+                            ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="typeArea('${n}')" class="bg-slate-700 hover:bg-pink-600 text-white text-2xl font-bold py-3 rounded-lg active:scale-95">${n}</button>`).join('')}
+                            <button onclick="typeArea('C')" class="bg-red-900/50 hover:bg-red-600 text-red-200 text-xl font-bold py-3 rounded-lg active:scale-95">C</button>
+                            <button onclick="typeArea('0')" class="bg-slate-700 hover:bg-pink-600 text-white text-2xl font-bold py-3 rounded-lg active:scale-95">0</button>
+                            <button onclick="checkArea()" class="bg-emerald-900/50 hover:bg-emerald-600 text-emerald-200 text-xl font-bold py-3 rounded-lg active:scale-95">OK</button>
                         </div>
                     </div>
                     <div id="room7-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Senha incorreta. Lembre-se: Área = Base × Altura.</div>
                 </div>
             `;
         }
-        function typeArea(char) {
-            if(char === 'C') areaKeypad = "";
-            else if (areaKeypad.length < 5) areaKeypad += char;
-            renderRoom7();
-        }
+        function typeArea(char) { if(char === 'C') areaKeypad = ""; else if (areaKeypad.length < 5) areaKeypad += char; renderRoom7(); }
         function checkArea() {
-            if (areaKeypad === "180") {
-                showModal("Porta Aberta!", "Excelente! 15m × 12m = 180 metros quadrados de área.", "📐", "Avançar ➔");
-            } else {
-                areaKeypad = ""; document.getElementById('room7-error').classList.remove('opacity-0');
-                setTimeout(() => { document.getElementById('room7-error').classList.add('opacity-0'); renderRoom7(); }, 1500);
-            }
+            if (areaKeypad === "180") { showModal("Porta Aberta!", "Excelente! 15m × 12m = 180 metros quadrados.", "📐", "Avançar ➔"); }
+            else { areaKeypad = ""; document.getElementById('room7-error').classList.remove('opacity-0'); setTimeout(() => { document.getElementById('room7-error').classList.add('opacity-0'); renderRoom7(); }, 1500); }
         }
 
         function renderRoom8() {
@@ -660,52 +596,45 @@
                         <h2 class="text-3xl text-cyan-400 font-title mb-4 flex items-center justify-center gap-2"><span>📱</span> O Lote de Celulares</h2>
                         <p class="text-lg text-slate-200">Selecione os celulares para embalar representando a fração <span class="text-cyan-400 font-bold text-xl">12/25</span>.</p>
                     </div>
-                    <div class="bg-slate-900 p-6 rounded-2xl border-2 border-slate-700 shadow-2xl mb-6">
+                    <div class="bg-slate-900 p-6 rounded-2xl border-2 border-slate-700 mb-6">
                         <div class="grid grid-cols-5 gap-3 md:gap-6">${phonesHTML}</div>
                     </div>
-                    <button onclick="checkPhones()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Embalar Fração (12/25)</button>
-                    <div id="room8-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity text-center">Quantidade errada. Você selecionou ${phonesPacked.filter(v=>v).length}/25.</div>
+                    <button onclick="checkPhones()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Embalar Fração</button>
+                    <div id="room8-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity text-center">Selecionou ${phonesPacked.filter(v=>v).length} de 25.</div>
                 </div>
             `;
         }
         function togglePhone(i) { phonesPacked[i] = !phonesPacked[i]; renderRoom8(); }
         function checkPhones() {
-            const count = phonesPacked.filter(v => v).length;
-            if (count === 12) { showModal("Lote Enviado!", "Muito bem! 12 de 25 representa a fração 12/25.", "📦", "Próxima Sala ➔"); }
-            else {
-                document.getElementById('room8-error').innerText = `Quantidade errada. Você selecionou ${count}/25.`;
-                document.getElementById('room8-error').classList.remove('opacity-0');
-                setTimeout(() => document.getElementById('room8-error').classList.add('opacity-0'), 2000);
-            }
+            if (phonesPacked.filter(v => v).length === 12) { showModal("Lote Enviado!", "Muito bem! 12/25 da caixa está preenchida.", "📦", "Próxima Sala ➔"); }
+            else { document.getElementById('room8-error').innerText = `Selecionou ${phonesPacked.filter(v=>v).length} de 25.`; document.getElementById('room8-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room8-error').classList.add('opacity-0'), 2000); }
         }
 
         function renderRoom9() {
             const leftPattern = [true, false, false, true, true, true, true, false];
-            let gridHTML = '';
-            for(let i=0; i<8; i++) { gridHTML += `<div class="w-10 h-10 md:w-16 md:h-16 border border-slate-600 ${leftPattern[i] ? 'bg-amber-500' : 'bg-slate-800'}"></div>`; }
-            let rightHTML = symGrid.map((active, i) => `
-                <div onclick="toggleSym(${i})" class="w-10 h-10 md:w-16 md:h-16 border border-slate-600 cursor-pointer transition-colors duration-200 ${active ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'bg-slate-800 hover:bg-slate-700'}"></div>
-            `).join('');
+            let rightHTML = symGrid.map((active, i) => `<div onclick="toggleSym(${i})" class="w-10 h-10 md:w-16 md:h-16 border border-slate-600 cursor-pointer transition-colors ${active ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'bg-slate-800'}"></div>`).join('');
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-amber-400 font-title mb-4 flex items-center justify-center gap-2"><span>🪟</span> O Vitral Partido</h2>
-                        <p class="text-lg text-slate-200">O vitral da direita deve ser uma imagem <span class="text-amber-400 font-bold">SIMÉTRICA</span> (como um espelho) do esquerdo.</p>
+                        <p class="text-lg text-slate-200">Pinte o vitral da direita para formar uma imagem <span class="text-amber-400 font-bold">SIMÉTRICA</span> (como espelho).</p>
                     </div>
                     <div class="flex bg-slate-900 p-4 border-4 border-slate-700 rounded-xl shadow-2xl relative">
-                        <div class="grid grid-cols-2 grid-rows-4 w-20 h-40 md:w-32 md:h-64">${gridHTML}</div>
+                        <div class="grid grid-cols-2 grid-rows-4 w-20 h-40 md:w-32 md:h-64">
+                            ${leftPattern.map(p => `<div class="w-10 h-10 md:w-16 md:h-16 border border-slate-600 ${p ? 'bg-amber-500' : 'bg-slate-800'}"></div>`).join('')}
+                        </div>
                         <div class="w-2 bg-slate-500 h-40 md:h-64 mx-2"></div>
                         <div class="grid grid-cols-2 grid-rows-4 w-20 h-40 md:w-32 md:h-64">${rightHTML}</div>
                     </div>
                     <button onclick="checkSymmetry()" class="mt-8 bg-amber-600 hover:bg-amber-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Analisar Vitral</button>
-                    <div id="room9-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">A imagem ainda não está perfeitamente simétrica.</div>
+                    <div id="room9-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">A imagem ainda não está simétrica!</div>
                 </div>
             `;
         }
         function toggleSym(i) { symGrid[i] = !symGrid[i]; renderRoom9(); }
         function checkSymmetry() {
             const target = [false, true, true, false, true, true, false, true];
-            if(symGrid.every((v, i) => v === target[i])) { showModal("Luz Restaurada!", "Lindo! Você domina o conceito de eixo de simetria geométrica.", "✨", "Prosseguir ➔"); }
+            if(symGrid.every((v, i) => v === target[i])) { showModal("Luz Restaurada!", "Você domina o conceito de eixo de simetria geométrica.", "✨", "Prosseguir ➔"); }
             else { document.getElementById('room9-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room9-error').classList.add('opacity-0'), 2000); }
         }
 
@@ -714,39 +643,26 @@
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-rose-400 font-title mb-4 flex items-center justify-center gap-2"><span>🧮</span> A Maleta de Peças</h2>
-                        <p class="text-lg text-slate-200">Quantas peças formam o número <span class="text-rose-400 font-bold text-3xl">201</span> ?</p>
+                        <p class="text-lg text-slate-200">Selecione as Centenas, Dezenas e Unidades para compor o número <span class="text-rose-400 font-bold text-3xl">201</span>.</p>
                     </div>
                     <div class="flex flex-wrap gap-4 md:gap-8 justify-center mb-8">
-                        <div class="flex flex-col items-center bg-slate-900 p-4 rounded-2xl border-2 border-slate-700 w-24 md:w-28">
-                            <span class="text-rose-300 font-bold mb-2 text-sm md:text-base">Centenas</span>
-                            <button onclick="chgDec('c', 1)" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-1 rounded-t">▲</button>
-                            <div class="text-4xl font-title text-white py-2">${decimalUnits.c}</div>
-                            <button onclick="chgDec('c', -1)" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-1 rounded-b">▼</button>
-                        </div>
-                        <div class="flex flex-col items-center bg-slate-900 p-4 rounded-2xl border-2 border-slate-700 w-24 md:w-28">
-                            <span class="text-orange-300 font-bold mb-2 text-sm md:text-base">Dezenas</span>
-                            <button onclick="chgDec('d', 1)" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-1 rounded-t">▲</button>
-                            <div class="text-4xl font-title text-white py-2">${decimalUnits.d}</div>
-                            <button onclick="chgDec('d', -1)" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-1 rounded-b">▼</button>
-                        </div>
-                        <div class="flex flex-col items-center bg-slate-900 p-4 rounded-2xl border-2 border-slate-700 w-24 md:w-28">
-                            <span class="text-yellow-300 font-bold mb-2 text-sm md:text-base">Unidades</span>
-                            <button onclick="chgDec('u', 1)" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-1 rounded-t">▲</button>
-                            <div class="text-4xl font-title text-white py-2">${decimalUnits.u}</div>
-                            <button onclick="chgDec('u', -1)" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-1 rounded-b">▼</button>
-                        </div>
+                        ${['c','d','u'].map((t,i) => `
+                            <div class="flex flex-col items-center bg-slate-900 p-4 rounded-2xl border-2 border-slate-700 w-24 md:w-28">
+                                <span class="text-slate-300 font-bold mb-2 uppercase text-sm">${['Centenas','Dezenas','Unidades'][i]}</span>
+                                <button onclick="chgDec('${t}', 1)" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-1 rounded-t">▲</button>
+                                <div class="text-4xl font-title text-white py-2">${decimalUnits[t]}</div>
+                                <button onclick="chgDec('${t}', -1)" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-1 rounded-b">▼</button>
+                            </div>
+                        `).join('')}
                     </div>
                     <button onclick="checkDecimal()" class="bg-rose-600 hover:bg-rose-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Abrir Maleta</button>
                     <div id="room10-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">A composição está incorreta.</div>
                 </div>
             `;
         }
-        function chgDec(type, delta) {
-            decimalUnits[type] += delta; if (decimalUnits[type] < 0) decimalUnits[type] = 9; if (decimalUnits[type] > 9) decimalUnits[type] = 0;
-            renderRoom10();
-        }
+        function chgDec(t, d) { decimalUnits[t]+=d; if(decimalUnits[t]<0)decimalUnits[t]=9; if(decimalUnits[t]>9)decimalUnits[t]=0; renderRoom10(); }
         function checkDecimal() {
-            if (decimalUnits.c === 2 && decimalUnits.d === 0 && decimalUnits.u === 1) { showModal("Composição Correta!", "Isso! 2 Centenas = 200, 0 Dezenas = 0, 1 Unidade = 1. Total: 201.", "💼", "Avançar ➔"); }
+            if (decimalUnits.c === 2 && decimalUnits.d === 0 && decimalUnits.u === 1) { showModal("Composição Correta!", "Isso! 2 Centenas, 0 Dezenas, 1 Unidade = 201.", "💼", "Avançar ➔"); }
             else { document.getElementById('room10-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room10-error').classList.add('opacity-0'), 2000); }
         }
 
@@ -757,7 +673,7 @@
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-12 w-full shadow-xl">
                         <h2 class="text-3xl text-orange-400 font-title mb-4 flex items-center justify-center gap-2"><span>⚖️</span> A Balança de Ouro</h2>
-                        <p class="text-lg text-slate-200">A porta só abre quando a balança estiver <span class="text-orange-400 font-bold">em equilíbrio</span>.<br>O bloco misterioso pesa <span class="text-yellow-400 font-bold">750g</span>.</p>
+                        <p class="text-lg text-slate-200">A porta abre quando a balança estiver <span class="text-orange-400 font-bold">em equilíbrio</span>.<br>O bloco misterioso pesa <span class="text-yellow-400 font-bold">750g</span>.</p>
                     </div>
                     <div class="relative flex flex-col items-center mb-10 mt-10 w-full max-w-[300px]">
                         <div class="w-full h-4 bg-slate-600 rounded-full shadow-lg relative z-10 transition-transform duration-500" style="transform: rotate(${rotation}deg);">
@@ -767,9 +683,9 @@
                         <div class="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-b-[40px] border-b-slate-400 -mt-2 z-0"></div>
                     </div>
                     <div class="flex flex-wrap justify-center gap-4">
-                        <button onclick="addWeight(250)" class="bg-slate-700 hover:bg-orange-600 border-b-4 border-slate-900 text-white font-bold py-3 px-6 rounded-lg transition-transform active:translate-y-1 active:border-b-0">+ 250g</button>
-                        <button onclick="addWeight(100)" class="bg-slate-700 hover:bg-orange-600 border-b-4 border-slate-900 text-white font-bold py-3 px-6 rounded-lg transition-transform active:translate-y-1 active:border-b-0">+ 100g</button>
-                        <button onclick="addWeight(50)" class="bg-slate-700 hover:bg-orange-600 border-b-4 border-slate-900 text-white font-bold py-3 px-6 rounded-lg transition-transform active:translate-y-1 active:border-b-0">+ 50g</button>
+                        <button onclick="addWeight(250)" class="bg-slate-700 hover:bg-orange-600 border-b-4 border-slate-900 text-white font-bold py-3 px-6 rounded-lg">+ 250g</button>
+                        <button onclick="addWeight(100)" class="bg-slate-700 hover:bg-orange-600 border-b-4 border-slate-900 text-white font-bold py-3 px-6 rounded-lg">+ 100g</button>
+                        <button onclick="addWeight(50)" class="bg-slate-700 hover:bg-orange-600 border-b-4 border-slate-900 text-white font-bold py-3 px-6 rounded-lg">+ 50g</button>
                         <button onclick="scaleWeight = 0; renderRoom11()" class="text-slate-400 underline hover:text-white ml-2">Esvaziar</button>
                     </div>
                 </div>
@@ -777,12 +693,11 @@
         }
         function addWeight(w) {
             scaleWeight += w; renderRoom11();
-            if(scaleWeight === 750) { setTimeout(() => showModal("Equilíbrio Perfeito!", "Exato! As combinações de peso equilibraram a balança em 750g.", "⚖️", "Próxima Sala ➔"), 600); }
+            if(scaleWeight === 750) { setTimeout(() => showModal("Equilíbrio Perfeito!", "As combinações de peso equilibraram a balança em 750g.", "⚖️", "Próxima Sala ➔"), 600); }
             else if (scaleWeight > 750) { setTimeout(() => { scaleWeight = 0; renderRoom11(); }, 1000); }
         }
 
         function renderRoom12() {
-            let dots = [{x: 20, y: 60}, {x: 80, y: 25}, {x: 180, y: 25}, {x: 120, y: 60}, {x: 20, y: 160}, {x: 80, y: 125}, {x: 180, y: 125}, {x: 120, y: 160}];
             let svgContent = `
                 <polygon points="20,60 120,60 120,160 20,160" fill="#334155" stroke="#0f172a" stroke-width="2" />
                 <polygon points="120,60 180,25 180,125 120,160" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
@@ -791,16 +706,16 @@
                 <line x1="80" y1="25" x2="80" y2="125" stroke="#0f172a" stroke-width="2" stroke-dasharray="4" />
                 <line x1="180" y1="125" x2="80" y2="125" stroke="#0f172a" stroke-width="2" stroke-dasharray="4" />
             `;
-            dots.forEach((d, i) => { svgContent += `<circle cx="${d.x}" cy="${d.y}" r="12" fill="${cubeVertices[i] ? '#22d3ee' : '#cbd5e1'}" class="cursor-pointer transition-colors duration-300" onclick="toggleVertex(${i})" />`; });
+            [{x:20,y:60},{x:80,y:25},{x:180,y:25},{x:120,y:60},{x:20,y:160},{x:80,y:125},{x:180,y:125},{x:120,y:160}].forEach((d,i) => {
+                svgContent += `<circle cx="${d.x}" cy="${d.y}" r="12" fill="${cubeVertices[i] ? '#22d3ee' : '#cbd5e1'}" class="cursor-pointer transition-colors duration-300" onclick="toggleVertex(${i})" />`;
+            });
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-cyan-300 font-title mb-4 flex items-center justify-center gap-2"><span>🧊</span> O Artefato de Geometria</h2>
-                        <p class="text-lg text-slate-200">Ative todos os <span class="text-cyan-300 font-bold">VÉRTICES</span> (pontas) deste Sólido Geométrico clicando neles.</p>
+                        <p class="text-lg text-slate-200">Ative todos os <span class="text-cyan-300 font-bold">VÉRTICES</span> (pontas) deste Cubo clicando neles.</p>
                     </div>
-                    <div class="relative bg-slate-900 p-6 md:p-10 rounded-full border-4 border-slate-700 shadow-[0_0_50px_rgba(34,211,238,0.1)] mb-8 scale-90 md:scale-100">
-                        <svg width="200" height="200" viewBox="0 0 200 200">${svgContent}</svg>
-                    </div>
+                    <div class="relative bg-slate-900 p-6 md:p-10 rounded-full border-4 border-slate-700 mb-8"><svg width="200" height="200" viewBox="0 0 200 200">${svgContent}</svg></div>
                     <div class="text-slate-400 font-bold text-lg">Vértices ativos: <span class="text-cyan-400 text-2xl">${cubeVertices.filter(v=>v).length} / 8</span></div>
                 </div>
             `;
@@ -815,47 +730,39 @@
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-lime-400 font-title mb-4 flex items-center justify-center gap-2"><span>🌉</span> A Ponte de Pedras</h2>
-                        <p class="text-lg text-slate-200">Descubra a lógica da sequência (O dobro mais um):</p>
+                        <p class="text-lg text-slate-200">Descubra a lógica da sequência: <br><span class="text-lime-300">(O dobro mais um)</span></p>
                     </div>
                     <div class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8 md:mb-12 text-2xl md:text-4xl font-title text-slate-300">
                         <div class="bg-slate-700 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">2</div><span class="mt-2 md:mt-4">➔</span>
                         <div class="bg-slate-700 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">5</div><span class="mt-2 md:mt-4">➔</span>
                         <div class="bg-slate-700 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">11</div><span class="mt-2 md:mt-4">➔</span>
                         <div class="bg-slate-700 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">23</div><span class="mt-2 md:mt-4">➔</span>
-                        <div class="bg-slate-800 border-2 border-lime-500 text-lime-400 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg shadow-[0_0_15px_rgba(132,204,22,0.3)]">?</div>
+                        <div class="bg-slate-800 border-2 border-lime-500 text-lime-400 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">?</div>
                     </div>
                     <div class="flex gap-4 md:gap-6">
-                        <button onclick="checkSeq(46)" class="bg-slate-600 hover:bg-lime-600 border-b-4 border-slate-800 hover:border-lime-800 text-white font-title text-xl md:text-2xl py-3 px-6 md:py-4 md:px-8 rounded-xl transition-all">46</button>
-                        <button onclick="checkSeq(47)" class="bg-slate-600 hover:bg-lime-600 border-b-4 border-slate-800 hover:border-lime-800 text-white font-title text-xl md:text-2xl py-3 px-6 md:py-4 md:px-8 rounded-xl transition-all">47</button>
-                        <button onclick="checkSeq(50)" class="bg-slate-600 hover:bg-lime-600 border-b-4 border-slate-800 hover:border-lime-800 text-white font-title text-xl md:text-2xl py-3 px-6 md:py-4 md:px-8 rounded-xl transition-all">50</button>
+                        <button onclick="checkSeq(46)" class="bg-slate-600 hover:bg-lime-600 border-b-4 border-slate-800 text-white font-title text-xl md:text-2xl py-3 px-6 rounded-xl">46</button>
+                        <button onclick="checkSeq(47)" class="bg-slate-600 hover:bg-lime-600 border-b-4 border-slate-800 text-white font-title text-xl md:text-2xl py-3 px-6 rounded-xl">47</button>
+                        <button onclick="checkSeq(50)" class="bg-slate-600 hover:bg-lime-600 border-b-4 border-slate-800 text-white font-title text-xl md:text-2xl py-3 px-6 rounded-xl">50</button>
                     </div>
-                    <div id="room13-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity text-center">Pedra errada! Tente novamente.</div>
+                    <div id="room13-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity">Pedra errada! Tente novamente.</div>
                 </div>
             `;
         }
         function checkSeq(val) {
             if(val === 47) { showModal("Caminho Seguro!", "Genial! (23 x 2) + 1 = 47.", "🛤️", "Próxima Sala ➔"); }
-            else { document.getElementById('room13-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room13-error').classList.add('opacity-0'), 4000); }
+            else { document.getElementById('room13-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room13-error').classList.add('opacity-0'), 3000); }
         }
 
         function renderRoom14() {
-            let dialsHTML = '';
-            const symbols = [
-                '<polygon points="25,5 45,45 5,45" fill="#facc15" />',
-                '<rect x="10" y="10" width="30" height="30" fill="#facc15" />',
-                '<polygon points="25,5 48,20 38,45 12,45 2,20" fill="#facc15" />',
-                '<polygon points="25,2 45,12 45,38 25,48 5,38 5,12" fill="#facc15" />'
-            ];
-            for(let i=0; i<4; i++) {
-                dialsHTML += `
-                    <div class="flex flex-col items-center bg-slate-800/80 p-4 rounded-2xl border-4 border-slate-600 shadow-inner w-20 md:w-24">
-                        <svg width="50" height="50" class="mb-2 md:mb-4 drop-shadow-md">${symbols[i]}</svg>
-                        <button onclick="changeDoor(${i}, 1)" class="w-full bg-slate-700 hover:bg-indigo-600 rounded-t-lg py-1 text-white transition-colors">▲</button>
-                        <div class="text-3xl md:text-4xl font-title text-indigo-300 py-2">${doorDials[i]}</div>
-                        <button onclick="changeDoor(${i}, -1)" class="w-full bg-slate-700 hover:bg-indigo-600 rounded-b-lg py-1 text-white transition-colors">▼</button>
-                    </div>
-                `;
-            }
+            const symbols = ['<polygon points="25,5 45,45 5,45" fill="#facc15" />','<rect x="10" y="10" width="30" height="30" fill="#facc15" />','<polygon points="25,5 48,20 38,45 12,45 2,20" fill="#facc15" />','<polygon points="25,2 45,12 45,38 25,48 5,38 5,12" fill="#facc15" />'];
+            let dialsHTML = symbols.map((s,i) => `
+                <div class="flex flex-col items-center bg-slate-800/80 p-4 rounded-2xl border-4 border-slate-600 w-20 md:w-24">
+                    <svg width="50" height="50" class="mb-4">${s}</svg>
+                    <button onclick="changeDoor(${i}, 1)" class="w-full bg-slate-700 hover:bg-indigo-600 rounded-t-lg py-1 text-white">▲</button>
+                    <div class="text-3xl font-title text-indigo-300 py-2">${doorDials[i]}</div>
+                    <button onclick="changeDoor(${i}, -1)" class="w-full bg-slate-700 hover:bg-indigo-600 rounded-b-lg py-1 text-white">▼</button>
+                </div>
+            `).join('');
             container.innerHTML = `
                 <div class="w-full max-w-4xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
@@ -868,32 +775,27 @@
         }
         function changeDoor(index, delta) {
             doorDials[index] += delta; if(doorDials[index] > 9) doorDials[index] = 0; if(doorDials[index] < 0) doorDials[index] = 9; renderRoom14();
-            if (doorDials.every((val, i) => val === correctDoorDials[i])) { setTimeout(() => showModal("Guardiões Derrotados!", "Você decifrou a lógica geométrica.", "🛡️", "Avançar ➔"), 600); }
+            if (doorDials.every((val, i) => val === correctDoorDials[i])) { setTimeout(() => showModal("Guardiões Derrotados!", "Você decifrou a lógica geométrica dos lados.", "🛡️", "Avançar ➔"), 600); }
         }
 
         function renderRoom15() {
             let grid = '';
             for(let y=5; y>=1; y--) {
                 grid += `<div class="flex items-center justify-center text-indigo-400 font-bold">${y}</div>`;
-                for(let x=1; x<=5; x++) {
-                    grid += `<div onclick="checkCoord(${x}, ${y})" class="border border-indigo-500/30 hover:bg-indigo-500/40 cursor-pointer flex items-center justify-center text-2xl md:text-3xl transition-colors active:scale-95" id="coord-${x}-${y}">
-                        <span class="opacity-0 hover:opacity-100 text-indigo-300 text-[10px] md:text-xs font-bold bg-slate-900/80 px-1 rounded">(${x},${y})</span>
-                    </div>`;
-                }
+                for(let x=1; x<=5; x++) { grid += `<div onclick="checkCoord(${x}, ${y})" class="border border-indigo-500/30 hover:bg-indigo-500/40 cursor-pointer flex items-center justify-center text-2xl transition-colors" id="coord-${x}-${y}"></div>`; }
             }
             grid += `<div></div>`;
             for(let x=1; x<=5; x++) { grid += `<div class="flex items-center justify-center text-indigo-400 font-bold mt-2">${x}</div>`; }
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
-                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-6 w-full shadow-xl relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-indigo-600"></div>
+                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-6 w-full shadow-xl">
                         <h2 class="text-3xl text-blue-300 font-title mb-4 flex items-center justify-center gap-2"><span>🗺️</span> O Mapa Estelar</h2>
                         <p class="text-lg md:text-xl text-slate-200">Encontre a posição onde <span class="text-yellow-400 font-bold">X (horizontal) = 4</span> e <span class="text-yellow-400 font-bold">Y (vertical) = 2</span>.</p>
                     </div>
-                    <div class="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr] gap-1 md:gap-2 bg-slate-900 p-4 md:p-8 rounded-2xl border-4 border-slate-700 w-full max-w-md mx-auto aspect-square text-slate-600 shadow-2xl relative">
-                        <div class="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 text-indigo-400 font-bold uppercase tracking-widest text-sm">Eixo Y</div>
+                    <div class="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr] gap-1 md:gap-2 bg-slate-900 p-4 md:p-8 rounded-2xl border-4 border-slate-700 w-full max-w-md mx-auto aspect-square relative">
+                        <div class="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 text-indigo-400 font-bold uppercase text-sm">Eixo Y</div>
                         ${grid}
-                        <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-indigo-400 font-bold uppercase tracking-widest text-sm">Eixo X</div>
+                        <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-indigo-400 font-bold uppercase text-sm">Eixo X</div>
                     </div>
                     <div id="room15-error" class="h-8 mt-10 text-red-400 font-bold opacity-0 transition-opacity">Você errou o alvo!</div>
                 </div>
@@ -905,17 +807,14 @@
                 setTimeout(() => showModal("Estrela Encontrada!", "Perfeito! Leu o plano cartesiano corretamente.", "🗺️", "Próxima Sala ➔"), 500);
             } else {
                 document.getElementById(`coord-${x}-${y}`).innerHTML = "❌"; document.getElementById(`coord-${x}-${y}`).classList.add("bg-red-500/30");
-                const err = document.getElementById('room15-error'); err.innerText = `Você clicou em (X: ${x}, Y: ${y}). A dica pede (X: 4, Y: 2)!`; err.classList.remove('opacity-0');
-                setTimeout(() => { document.getElementById(`coord-${x}-${y}`).innerHTML = `<span class="opacity-0 hover:opacity-100 text-indigo-300 text-[10px] md:text-xs font-bold bg-slate-900/80 px-1 rounded">(${x},${y})</span>`; document.getElementById(`coord-${x}-${y}`).classList.remove("bg-red-500/30"); err.classList.add('opacity-0'); }, 3000);
+                const err = document.getElementById('room15-error'); err.innerText = `Clicou em X:${x}, Y:${y}!`; err.classList.remove('opacity-0');
+                setTimeout(() => { document.getElementById(`coord-${x}-${y}`).innerHTML = ''; document.getElementById(`coord-${x}-${y}`).classList.remove("bg-red-500/30"); err.classList.add('opacity-0'); }, 2000);
             }
         }
 
         function renderRoom16() {
             let multiplesBoard = [14, 18, 21, 27, 28, 34, 35, 42, 45, 49, 56, 60];
-            let btns = multiplesBoard.map((val, i) => `
-                <button onclick="toggleMultiple(${i})" class="w-16 h-16 md:w-20 md:h-20 text-2xl md:text-3xl font-title rounded-2xl border-b-4 transition-all duration-200 active:translate-y-1 active:border-b-0 
-                ${multiplesState[i] ? 'bg-indigo-600 border-indigo-900 text-white shadow-[0_0_20px_rgba(79,70,229,0.8)]' : 'bg-slate-700 border-slate-900 text-slate-300 hover:bg-slate-600'}">${val}</button>
-            `).join('');
+            let btns = multiplesBoard.map((val, i) => `<button onclick="toggleMultiple(${i})" class="w-16 h-16 md:w-20 md:h-20 text-2xl font-title rounded-2xl border-b-4 transition-all ${multiplesState[i] ? 'bg-indigo-600 border-indigo-900 text-white shadow-[0_0_20px_rgba(79,70,229,0.8)]' : 'bg-slate-700 border-slate-900 text-slate-300'}">${val}</button>`).join('');
             container.innerHTML = `
                 <div class="w-full max-w-4xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
@@ -931,24 +830,18 @@
         function toggleMultiple(i) { multiplesState[i] = !multiplesState[i]; renderRoom16(); }
         function checkMultiples() {
             const target = [true, false, true, false, true, false, true, true, false, true, true, false]; 
-            if(multiplesState.every((val, i) => val === target[i])) { showModal("Painel Desbloqueado!", "Fantástico! Você encontrou os múltiplos exatos de 7.", "🔐", "Avançar ➔"); }
-            else { document.getElementById('room16-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room16-error').classList.add('opacity-0'), 3500); }
+            if(multiplesState.every((val, i) => val === target[i])) { showModal("Painel Desbloqueado!", "Você encontrou os múltiplos de 7.", "🔐", "Avançar ➔"); }
+            else { document.getElementById('room16-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room16-error').classList.add('opacity-0'), 3000); }
         }
 
         function renderRoom17() {
-            let slotsHTML = placedMeasures.map((measure, i) => {
-                if (measure) { return `<div onclick="clickSlot(${i})" class="w-full h-16 md:h-20 bg-sky-600 border-2 border-sky-400 rounded-xl flex items-center justify-center font-bold text-white text-lg md:text-xl cursor-pointer shadow-lg transform transition hover:scale-105">${measure.text}</div>`; }
-                else { return `<div onclick="clickSlot(${i})" class="w-full h-16 md:h-20 bg-slate-800/50 border-2 border-dashed border-slate-500 rounded-xl flex items-center justify-center font-bold text-slate-500 text-sm md:text-base cursor-pointer hover:bg-slate-700/50 transition">Vazio</div>`; }
-            }).join('');
-            let poolHTML = measuresPool.map((measure, i) => {
-                let isSelected = selectedMeasure === measure.id;
-                return `<div onclick="clickPool(${measure.id})" class="w-24 md:w-32 h-16 md:h-20 flex items-center justify-center font-bold text-lg md:text-xl rounded-xl cursor-pointer transition-all transform ${isSelected ? 'bg-yellow-400 text-slate-900 scale-110 shadow-[0_0_15px_rgba(250,204,21,0.8)] border-2 border-white' : 'bg-slate-700 text-slate-200 border-b-4 border-slate-900 hover:bg-slate-600'}">${measure.text}</div>`;
-            }).join('');
+            let slotsHTML = placedMeasures.map((measure, i) => `<div onclick="clickSlot(${i})" class="w-full h-16 md:h-20 ${measure ? 'bg-sky-600 border-sky-400 text-white' : 'bg-slate-800/50 border-dashed border-slate-500 text-slate-500'} border-2 rounded-xl flex items-center justify-center font-bold text-lg md:text-xl cursor-pointer shadow-lg">${measure ? measure.text : 'Vazio'}</div>`).join('');
+            let poolHTML = measuresPool.map((measure, i) => `<div onclick="clickPool(${measure.id})" class="w-24 md:w-32 h-16 md:h-20 flex items-center justify-center font-bold text-lg rounded-xl cursor-pointer ${selectedMeasure === measure.id ? 'bg-yellow-400 text-slate-900 scale-110 border-2 border-white' : 'bg-slate-700 text-slate-200 border-b-4 border-slate-900'}">${measure.text}</div>`).join('');
             container.innerHTML = `
                 <div class="w-full max-w-4xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-sky-400 font-title mb-4 flex items-center justify-center gap-2"><span>📏</span> A Linha de Medidas</h2>
-                        <p class="text-lg text-slate-200">Posicione as tábuas em <span class="text-yellow-400 font-bold">ordem crescente</span> (da MENOR para a MAIOR medida).<br><span class="text-sm text-sky-300 mt-2 block">Dica: Converta tudo para metros mentalmente! (Clique em uma peça embaixo e depois no espaço vazio acima)</span></p>
+                        <p class="text-lg text-slate-200">Posicione as tábuas em <span class="text-yellow-400 font-bold">ordem crescente</span> (da MENOR para a MAIOR).</p>
                     </div>
                     <div class="w-full max-w-2xl bg-slate-900 p-6 rounded-3xl border-4 border-slate-700 shadow-2xl mb-8 relative">
                         <div class="absolute w-full h-2 bg-slate-700 top-1/2 left-0 -translate-y-1/2 -z-10"></div>
@@ -957,28 +850,24 @@
                     </div>
                     <div class="flex flex-wrap justify-center gap-4 min-h-[80px]">${poolHTML}</div>
                     <button onclick="checkRoom17()" class="mt-8 bg-sky-600 hover:bg-sky-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Construir Ponte</button>
-                    <div id="room17-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">A ordem está incorreta ou faltam peças. Verifique suas conversões!</div>
+                    <div id="room17-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">A ordem está incorreta. Verifique as conversões!</div>
                 </div>
             `;
         }
-        function clickPool(id) { if (selectedMeasure === id) selectedMeasure = null; else selectedMeasure = id; renderRoom17(); }
+        function clickPool(id) { selectedMeasure = selectedMeasure === id ? null : id; renderRoom17(); }
         function clickSlot(index) {
             if (selectedMeasure !== null) {
                 let poolIdx = measuresPool.findIndex(m => m.id === selectedMeasure);
-                if (poolIdx > -1) {
-                    if (placedMeasures[index] !== null) { measuresPool.push(placedMeasures[index]); }
-                    placedMeasures[index] = measuresPool[poolIdx]; measuresPool.splice(poolIdx, 1); selectedMeasure = null;
-                }
+                if (poolIdx > -1) { if (placedMeasures[index] !== null) measuresPool.push(placedMeasures[index]); placedMeasures[index] = measuresPool[poolIdx]; measuresPool.splice(poolIdx, 1); selectedMeasure = null; }
             } else if (placedMeasures[index] !== null) { measuresPool.push(placedMeasures[index]); placedMeasures[index] = null; }
             renderRoom17();
         }
         function checkRoom17() {
-            if (placedMeasures.some(m => m === null)) { showRoom17Error(); return; }
-            let isCorrect = true;
-            for(let i=0; i<placedMeasures.length - 1; i++) { if(placedMeasures[i].val > placedMeasures[i+1].val) { isCorrect = false; break; } }
-            if(isCorrect) { showModal("Ponte Construída!", "Perfeito! 150 cm (1,5m) < 2m < 2500 mm (2,5m) < 0,5 km (500m).", "🌉", "Avançar ➔"); } else { showRoom17Error(); }
+            if (placedMeasures.some(m => m === null)) { document.getElementById('room17-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room17-error').classList.add('opacity-0'), 2000); return; }
+            let isCorrect = placedMeasures.every((val, i, arr) => !i || (val.val >= arr[i - 1].val));
+            if(isCorrect) { showModal("Ponte Construída!", "Perfeito! 150 cm (1,5m) < 2m < 2500 mm (2,5m) < 0,5 km (500m).", "🌉", "Avançar ➔"); }
+            else { document.getElementById('room17-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room17-error').classList.add('opacity-0'), 3000); }
         }
-        function showRoom17Error() { const err = document.getElementById('room17-error'); err.classList.remove('opacity-0'); setTimeout(() => err.classList.add('opacity-0'), 3500); }
 
         function renderRoom18() {
             const labels = ['Maçãs', 'Bananas', 'Laranjas']; const colors = ['bg-red-500', 'bg-yellow-400', 'bg-orange-500'];
@@ -995,8 +884,8 @@
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
-                        <h2 class="text-3xl text-yellow-300 font-title mb-4 flex items-center justify-center gap-2"><span>📊</span> O Arquivo Secreto</h2>
-                        <p class="text-lg text-slate-200">Ajuste as colunas do gráfico para refletirem exatamente os dados da tabela.</p>
+                        <h2 class="text-3xl text-yellow-300 font-title mb-4 flex items-center justify-center gap-2"><span>📊</span> O Gráfico Secreto</h2>
+                        <p class="text-lg text-slate-200">Ajuste as colunas do gráfico para baterem com a tabela.</p>
                         <div class="bg-slate-900 border-2 border-slate-700 rounded-xl p-4 mt-4 mx-auto max-w-sm">
                             <table class="w-full text-left text-slate-200">
                                 <tr><th class="py-1">Fruta</th><th class="py-1">Quantidade</th></tr>
@@ -1014,7 +903,7 @@
         }
         function changeBar(index, delta) { chartBars[index] += delta; if(chartBars[index] < 0) chartBars[index] = 0; if(chartBars[index] > 50) chartBars[index] = 50; renderRoom18(); }
         function checkRoom18() {
-            if(chartBars[0] === 30 && chartBars[1] === 10 && chartBars[2] === 40) { showModal("Dados Corretos!", "Excelente! Você ajustou o gráfico perfeitamente.", "📈", "Próxima Sala ➔"); }
+            if(chartBars[0] === 30 && chartBars[1] === 10 && chartBars[2] === 40) { showModal("Dados Corretos!", "Você ajustou o gráfico perfeitamente.", "📈", "Próxima Sala ➔"); }
             else { document.getElementById('room18-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room18-error').classList.add('opacity-0'), 3000); }
         }
 
@@ -1026,7 +915,7 @@
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-6 w-full shadow-xl">
                         <h2 class="text-3xl text-emerald-400 font-title mb-4 flex items-center justify-center gap-2"><span>🤖</span> O Cadeado Direcional</h2>
-                        <p class="text-lg text-slate-200">Programe a rota exata de 4 passos para o robô sair do início (A) e chegar na meta (B), desviando dos buracos (X).</p>
+                        <p class="text-lg text-slate-200">Programe a rota de 4 passos para o robô sair de (A) até (B), desviando dos buracos (X).</p>
                     </div>
                     <div class="flex flex-col md:flex-row gap-8 items-center w-full justify-center">
                         <div class="bg-slate-900 border-4 border-slate-700 p-4 rounded-2xl relative w-48 h-48 flex items-center justify-center text-2xl shadow-xl">
@@ -1037,367 +926,338 @@
                             </div>
                         </div>
                         <div class="bg-slate-900 border-4 border-slate-700 p-6 rounded-3xl shadow-2xl flex flex-col items-center">
-                            <div class="h-12 w-full bg-slate-950 border-2 border-slate-800 rounded-lg mb-6 flex items-center justify-center text-xl overflow-hidden px-2 whitespace-nowrap min-w-[160px]">${screenHTML}</div>
+                            <div class="h-12 w-full bg-slate-950 border-2 border-slate-800 rounded-lg mb-6 flex items-center justify-center text-xl overflow-hidden px-2">${screenHTML}</div>
                             <div class="grid grid-cols-3 gap-2 mb-4">
-                                <div></div><button onclick="addCmd('U')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg active:scale-95 shadow-md">⬆️</button><div></div>
-                                <button onclick="addCmd('L')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg active:scale-95 shadow-md">⬅️</button>
-                                <button onclick="addCmd('D')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg active:scale-95 shadow-md">⬇️</button>
-                                <button onclick="addCmd('R')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg active:scale-95 shadow-md">➡️</button>
+                                <div></div><button onclick="addCmd('U')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg">⬆️</button><div></div>
+                                <button onclick="addCmd('L')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg">⬅️</button>
+                                <button onclick="addCmd('D')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg">⬇️</button>
+                                <button onclick="addCmd('R')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg">➡️</button>
                             </div>
-                            <div class="flex gap-2">
-                                <button onclick="padLockPath=[]; renderRoom19();" class="text-slate-400 text-sm underline px-2 py-1">Limpar</button>
-                                <button onclick="checkRoom19()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded shadow-md">Testar</button>
-                            </div>
+                            <div class="flex gap-2"><button onclick="padLockPath=[]; renderRoom19();" class="text-slate-400 text-sm underline px-2">Limpar</button><button onclick="checkRoom19()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded shadow-md">Testar</button></div>
                         </div>
                     </div>
-                    <div id="room19-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity">A rota bateu num obstáculo, parede, ou não chegou no B.</div>
+                    <div id="room19-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity">A rota bateu num buraco ou parede.</div>
                 </div>
             `;
         }
         function addCmd(c) { if(padLockPath.length < 4) { padLockPath.push(c); renderRoom19(); } }
         function checkRoom19() {
-            if(padLockPath.join('') === 'UURR') { showModal("Rota Segura!", "Lógica perfeita! Você evitou os obstáculos.", "🤖", "Próxima Sala ➔"); }
+            if(padLockPath.join('') === 'UURR') { showModal("Rota Segura!", "Lógica perfeita!", "🤖", "Próxima Sala ➔"); }
             else { padLockPath = []; document.getElementById('room19-error').classList.remove('opacity-0'); setTimeout(() => { document.getElementById('room19-error').classList.add('opacity-0'); renderRoom19(); }, 3000); }
         }
 
         function renderRoom20() {
-            let dialsHTML = '';
-            for(let i=0; i<2; i++) {
-                dialsHTML += `
-                    <div class="flex flex-col items-center bg-slate-800 p-3 md:p-6 rounded-2xl border-4 border-slate-700 shadow-inner w-20 md:w-28">
-                        <button onclick="changeBossDial(${i}, 1)" class="w-full h-10 md:h-12 bg-slate-700 hover:bg-indigo-600 rounded-t-lg flex items-center justify-center text-2xl transition-colors active:bg-indigo-400">▲</button>
-                        <div class="h-20 md:h-24 w-full flex items-center justify-center bg-slate-900 border-y-2 border-slate-950 shadow-inner">
-                            <span class="text-5xl md:text-6xl font-title text-red-400 font-bold">${bossDials[i]}</span>
-                        </div>
-                        <button onclick="changeBossDial(${i}, -1)" class="w-full h-10 md:h-12 bg-slate-700 hover:bg-indigo-600 rounded-b-lg flex items-center justify-center text-2xl transition-colors active:bg-indigo-400">▼</button>
-                    </div>
-                `;
-            }
             container.innerHTML = `
                 <div class="w-full max-w-4xl flex flex-col items-center">
                     <div class="bg-gradient-to-b from-slate-900 to-red-950 p-6 md:p-10 rounded-[2rem] border-8 border-red-900 shadow-[0_0_80px_rgba(153,27,27,0.5)] text-center w-full relative">
                         <h2 class="text-3xl md:text-4xl text-white font-title mb-4 mt-6 drop-shadow-md">O Cofre Quente</h2>
-                        <p class="text-lg md:text-xl text-red-200 mb-6 font-bold">Descubra o valor final. Lembre-se da regra de ouro: multiplicações primeiro!</p>
+                        <p class="text-lg md:text-xl text-red-200 mb-6 font-bold">Lembre-se da regra: multiplicações primeiro!</p>
                         <div class="bg-slate-900/80 p-6 rounded-2xl border-2 border-red-800/50 inline-block text-2xl md:text-3xl font-bold text-slate-200 mb-8 w-full max-w-md">
                             <div class="mb-3">🍎 + 🍎 + 🍎 = 30</div>
                             <div class="mb-3">🍎 + 🍌 + 🍌 = 18</div>
                             <div class="mb-3">🍌 - 🍒 = 2</div>
                             <div class="mt-6 pt-4 border-t-2 border-slate-700 text-yellow-400 text-3xl md:text-4xl">🍒 + 🍎 × 🍌 = ?</div>
                         </div>
-                        <div class="flex justify-center gap-4 md:gap-8 bg-slate-900/50 p-6 rounded-3xl mx-auto w-fit">${dialsHTML}</div>
+                        <div class="flex justify-center gap-4 md:gap-8 bg-slate-900/50 p-6 rounded-3xl mx-auto w-fit">
+                            ${[0,1].map(i => `
+                                <div class="flex flex-col items-center bg-slate-800 p-3 rounded-2xl border-4 border-slate-700 w-20">
+                                    <button onclick="changeBossDial(${i}, 1)" class="w-full bg-slate-700 hover:bg-indigo-600 rounded-t-lg py-1 text-white">▲</button>
+                                    <div class="text-5xl font-title text-red-400 py-2">${bossDials[i]}</div>
+                                    <button onclick="changeBossDial(${i}, -1)" class="w-full bg-slate-700 hover:bg-indigo-600 rounded-b-lg py-1 text-white">▼</button>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 </div>
             `;
         }
         function changeBossDial(index, delta) {
             bossDials[index] += delta; if (bossDials[index] > 9) bossDials[index] = 0; if (bossDials[index] < 0) bossDials[index] = 9; renderRoom20();
-            if (bossDials[0] === 4 && bossDials[1] === 2) { setTimeout(() => showModal("Cofre Quente Aberto!", "Incrível! 2 + 10x4 = 42. Multiplica-se primeiro!", "🔥", "Avançar ➔"), 600); }
+            if (bossDials[0] === 4 && bossDials[1] === 2) { setTimeout(() => showModal("Cofre Quente Aberto!", "Incrível! 2 + (10x4) = 42.", "🔥", "Avançar ➔"), 600); }
         }
 
-        // ======================= NOVAS SALAS (21 a 28) ======================= //
-
-        // STAGE 21: Ângulos
         function renderRoom21() {
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
-                        <h2 class="text-3xl text-teal-400 font-title mb-4 flex items-center justify-center gap-2"><span>🧭</span> A Bússola Quebrada</h2>
-                        <p class="text-lg text-slate-200">Para a porta abrir, selecione a imagem que forma exatamente um <span class="text-yellow-400 font-bold">ÂNGULO RETO (90 graus)</span>.</p>
+                        <h2 class="text-3xl text-teal-400 font-title mb-4 flex items-center justify-center gap-2"><span>🧭</span> A Bússola</h2>
+                        <p class="text-lg text-slate-200">Selecione a imagem que forma exatamente um <span class="text-yellow-400 font-bold">ÂNGULO RETO (90º)</span>.</p>
                     </div>
                     <div class="flex flex-col md:flex-row justify-center gap-6 md:gap-10 mb-8">
-                        <!-- Acute -->
-                        <div onclick="checkAngle('acute')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-teal-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
-                            <svg width="100" height="100" viewBox="0 0 100 100" class="group-hover:scale-110 transition">
-                                <line x1="20" y1="80" x2="80" y2="80" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
-                                <line x1="20" y1="80" x2="50" y2="30" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
-                                <path d="M 40 80 A 20 20 0 0 0 32 60" fill="none" stroke="#38bdf8" stroke-width="3"/>
-                            </svg>
-                            <span class="text-slate-400 mt-4 font-bold uppercase text-sm">Opção 1</span>
+                        <div onclick="checkAngle('acute')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-teal-400 cursor-pointer shadow-lg group">
+                            <svg width="100" height="100" viewBox="0 0 100 100" class="group-hover:scale-110 transition"><line x1="20" y1="80" x2="80" y2="80" stroke="#94a3b8" stroke-width="6"/><line x1="20" y1="80" x2="50" y2="30" stroke="#94a3b8" stroke-width="6"/><path d="M 40 80 A 20 20 0 0 0 32 60" fill="none" stroke="#38bdf8" stroke-width="3"/></svg>
                         </div>
-                        <!-- Right Angle -->
-                        <div onclick="checkAngle('right')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-teal-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
-                            <svg width="100" height="100" viewBox="0 0 100 100" class="group-hover:scale-110 transition">
-                                <line x1="20" y1="80" x2="80" y2="80" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
-                                <line x1="20" y1="80" x2="20" y2="20" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
-                                <rect x="20" y="60" width="20" height="20" fill="none" stroke="#38bdf8" stroke-width="3"/>
-                                <circle cx="30" cy="70" r="2" fill="#38bdf8" />
-                            </svg>
-                            <span class="text-slate-400 mt-4 font-bold uppercase text-sm">Opção 2</span>
+                        <div onclick="checkAngle('right')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-teal-400 cursor-pointer shadow-lg group">
+                            <svg width="100" height="100" viewBox="0 0 100 100" class="group-hover:scale-110 transition"><line x1="20" y1="80" x2="80" y2="80" stroke="#94a3b8" stroke-width="6"/><line x1="20" y1="80" x2="20" y2="20" stroke="#94a3b8" stroke-width="6"/><rect x="20" y="60" width="20" height="20" fill="none" stroke="#38bdf8" stroke-width="3"/><circle cx="30" cy="70" r="2" fill="#38bdf8" /></svg>
                         </div>
-                        <!-- Obtuse -->
-                        <div onclick="checkAngle('obtuse')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-teal-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
-                            <svg width="100" height="100" viewBox="0 0 100 100" class="group-hover:scale-110 transition">
-                                <line x1="40" y1="80" x2="90" y2="80" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
-                                <line x1="40" y1="80" x2="10" y2="30" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
-                                <path d="M 60 80 A 20 20 0 0 1 25 55" fill="none" stroke="#38bdf8" stroke-width="3"/>
-                            </svg>
-                            <span class="text-slate-400 mt-4 font-bold uppercase text-sm">Opção 3</span>
+                        <div onclick="checkAngle('obtuse')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-teal-400 cursor-pointer shadow-lg group">
+                            <svg width="100" height="100" viewBox="0 0 100 100" class="group-hover:scale-110 transition"><line x1="40" y1="80" x2="90" y2="80" stroke="#94a3b8" stroke-width="6"/><line x1="40" y1="80" x2="10" y2="30" stroke="#94a3b8" stroke-width="6"/><path d="M 60 80 A 20 20 0 0 1 25 55" fill="none" stroke="#38bdf8" stroke-width="3"/></svg>
                         </div>
                     </div>
-                    <div id="room21-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Este ângulo não é reto! Lembre-se do canto de um quadrado.</div>
+                    <div id="room21-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Não é reto! Lembre-se do canto de um quadrado.</div>
                 </div>
             `;
         }
         function checkAngle(type) {
-            if(type === 'right') { showModal("Ângulo Certo!", "Muito bem! O Ângulo Reto mede exatamente 90 graus (como a quina de uma porta).", "📐", "Próxima Sala ➔"); }
+            if(type === 'right') { showModal("Ângulo Certo!", "Muito bem! O Ângulo Reto mede exatamente 90 graus.", "📐", "Próxima Sala ➔"); }
             else { document.getElementById('room21-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room21-error').classList.add('opacity-0'), 3000); }
         }
 
-        // STAGE 22: Porcentagem
+        // We re-used older questions. For Room 22 we will use Fraction Mirrors (Espelhos Mágicos) to wrap up the regular ones.
         function renderRoom22() {
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
-                        <h2 class="text-3xl text-green-400 font-title mb-4 flex items-center justify-center gap-2"><span>🔋</span> O Baú das Porcentagens</h2>
-                        <p class="text-lg text-slate-200">A bateria principal deve ser carregada até atingir exatamente <span class="text-green-400 font-bold">75%</span>.</p>
-                    </div>
-                    
-                    <div class="w-full max-w-sm h-16 md:h-20 bg-slate-900 border-4 border-slate-600 rounded-xl relative overflow-hidden mb-8 shadow-inner flex items-center p-1">
-                        <div class="h-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500 ease-out rounded" style="width: ${batteryLevel}%"></div>
-                        <div class="absolute inset-0 flex items-center justify-center font-bold text-xl drop-shadow-md z-10 ${batteryLevel > 40 ? 'text-slate-900' : 'text-slate-300'}">${batteryLevel}%</div>
-                    </div>
-
-                    <div class="flex gap-4">
-                        <button onclick="addBattery(25)" class="bg-green-600 hover:bg-green-500 text-white font-title text-xl py-3 px-8 rounded-xl shadow-lg">+ 25%</button>
-                        <button onclick="batteryLevel = 0; renderRoom22()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-3 px-6 rounded-xl">Zerar</button>
-                    </div>
-                    <div id="room22-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity">Nível incorreto! O sistema recusa cargas diferentes de 75%.</div>
-                </div>
-            `;
-        }
-        function addBattery(val) {
-            batteryLevel += val; if(batteryLevel > 100) batteryLevel = 100; renderRoom22();
-            if(batteryLevel === 75) { setTimeout(() => showModal("Energizado!", "Excelente! 75% é o mesmo que 3 partes de 4 (3/4).", "⚡", "Próxima Sala ➔"), 600); }
-            else if(batteryLevel === 100) { document.getElementById('room22-error').classList.remove('opacity-0'); setTimeout(() => { batteryLevel = 0; renderRoom22(); }, 2000); }
-        }
-
-        // STAGE 23: Decimais
-        function renderRoom23() {
-            container.innerHTML = `
-                <div class="w-full max-w-3xl flex flex-col items-center">
-                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
-                        <h2 class="text-3xl text-orange-400 font-title mb-4 flex items-center justify-center gap-2"><span>🔢</span> O Trilho Decimal</h2>
-                        <p class="text-lg text-slate-200">Continue a sequência de números decimais (padrão de soma):<br><span class="text-2xl text-yellow-400 font-bold mt-2 block">0,3 ➔ 0,6 ➔ 0,9 ➔ ?</span></p>
-                    </div>
-                    <div class="flex items-center gap-4 bg-slate-900 p-8 rounded-3xl border-4 border-slate-700 shadow-2xl mb-8">
-                        <div class="flex flex-col items-center">
-                            <button onclick="decSeqWhole = (decSeqWhole+1)%10; renderRoom23()" class="text-3xl text-slate-400 hover:text-white p-2">▲</button>
-                            <div class="text-6xl font-title text-orange-400 w-20 text-center bg-slate-800 rounded-xl py-2">${decSeqWhole}</div>
-                            <button onclick="decSeqWhole = (decSeqWhole-1+10)%10; renderRoom23()" class="text-3xl text-slate-400 hover:text-white p-2">▼</button>
-                        </div>
-                        <div class="text-7xl font-title text-slate-500 pb-4">,</div>
-                        <div class="flex flex-col items-center">
-                            <button onclick="decSeqFrac = (decSeqFrac+1)%10; renderRoom23()" class="text-3xl text-slate-400 hover:text-white p-2">▲</button>
-                            <div class="text-6xl font-title text-orange-400 w-20 text-center bg-slate-800 rounded-xl py-2">${decSeqFrac}</div>
-                            <button onclick="decSeqFrac = (decSeqFrac-1+10)%10; renderRoom23()" class="text-3xl text-slate-400 hover:text-white p-2">▼</button>
-                        </div>
-                    </div>
-                    <button onclick="checkRoom23()" class="bg-orange-600 hover:bg-orange-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Confirmar</button>
-                    <div id="room23-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Sequência errada! 0,9 + 0,3 = ?</div>
-                </div>
-            `;
-        }
-        function checkRoom23() {
-            if(decSeqWhole === 1 && decSeqFrac === 2) { showModal("Perfeito!", "Muito bom! 0,9 mais 0,3 forma 1 inteiro e 2 décimos (1,2).", "✅", "Próxima Sala ➔"); }
-            else { document.getElementById('room23-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room23-error').classList.add('opacity-0'), 3000); }
-        }
-
-        // STAGE 24: Divisão
-        function renderRoom24() {
-            let chestsHTML = chestCoins.map((coins, i) => `
-                <div onclick="addCoinToChest(${i})" class="flex flex-col items-center bg-slate-800 p-4 rounded-xl border-2 border-slate-600 cursor-pointer hover:bg-slate-700 transition transform hover:scale-105 active:scale-95 shadow-lg">
-                    <span class="text-5xl mb-2">🧰</span>
-                    <span class="text-yellow-400 font-bold text-xl">${coins} moedas</span>
-                </div>
-            `).join('');
-
-            container.innerHTML = `
-                <div class="w-full max-w-4xl flex flex-col items-center">
-                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
-                        <h2 class="text-3xl text-yellow-500 font-title mb-4 flex items-center justify-center gap-2"><span>🪙</span> A Máquina de Divisão</h2>
-                        <p class="text-lg text-slate-200">Você possui <span class="text-yellow-400 font-bold">${coinsToDistribute}</span> moedas na mão. <br>Distribua-as <span class="font-bold underline">igualmente</span> entre os 4 baús clicando neles.</p>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full mb-8">
-                        ${chestsHTML}
-                    </div>
-                    <div class="flex gap-4">
-                        <button onclick="checkRoom24()" class="bg-yellow-600 hover:bg-yellow-500 text-slate-900 font-title text-xl py-3 px-10 rounded-full shadow-lg">Verificar Baús</button>
-                        <button onclick="resetRoom24()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded-full">Recolher</button>
-                    </div>
-                    <div id="room24-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">A divisão não está igualitária ou ainda sobraram moedas.</div>
-                </div>
-            `;
-        }
-        function addCoinToChest(i) {
-            if(coinsToDistribute > 0) { chestCoins[i]++; coinsToDistribute--; renderRoom24(); }
-        }
-        function resetRoom24() { chestCoins = [0,0,0,0]; coinsToDistribute = 24; renderRoom24(); }
-        function checkRoom24() {
-            if(coinsToDistribute === 0 && chestCoins.every(c => c === 6)) { showModal("Divisão Exata!", "Excelente! 24 dividido por 4 é exatamente 6 para cada baú.", "🧮", "Avançar ➔"); }
-            else { document.getElementById('room24-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room24-error').classList.add('opacity-0'), 3000); }
-        }
-
-        // STAGE 25: Probabilidade
-        function renderRoom25() {
-            // Urn with visually distinct balls
-            let balls = '';
-            for(let i=0; i<8; i++) balls += `<circle cx="${30 + Math.random()*140}" cy="${150 - Math.random()*80}" r="12" fill="#ef4444" />`; // Red
-            for(let i=0; i<2; i++) balls += `<circle cx="${30 + Math.random()*140}" cy="${150 - Math.random()*80}" r="12" fill="#3b82f6" />`; // Blue
-            for(let i=0; i<1; i++) balls += `<circle cx="${30 + Math.random()*140}" cy="${150 - Math.random()*80}" r="12" fill="#eab308" />`; // Yellow
-
-            container.innerHTML = `
-                <div class="w-full max-w-3xl flex flex-col items-center">
-                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
-                        <h2 class="text-3xl text-pink-400 font-title mb-4 flex items-center justify-center gap-2"><span>🎲</span> A Urna do Destino</h2>
-                        <p class="text-lg text-slate-200">Se você colocar a mão na urna de olhos vendados, tirar qual cor é o evento <strong class="text-pink-400">MAIS PROVÁVEL</strong> de acontecer?</p>
-                    </div>
-                    
-                    <div class="relative w-48 h-56 mb-8">
-                        <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-2xl">
-                            <!-- Glass Jar -->
-                            <path d="M 40 20 L 160 20 L 180 180 Q 100 200 20 180 Z" fill="rgba(255,255,255,0.1)" stroke="#cbd5e1" stroke-width="4"/>
-                            ${balls}
-                            <!-- Shine -->
-                            <path d="M 50 30 L 70 30 L 80 170 L 60 170 Z" fill="rgba(255,255,255,0.15)"/>
-                        </svg>
-                    </div>
-
-                    <div class="flex gap-4 w-full justify-center">
-                        <button onclick="checkRoom25('red')" class="w-32 bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-xl shadow-lg border-b-4 border-red-800 active:translate-y-1 active:border-b-0">Vermelho</button>
-                        <button onclick="checkRoom25('blue')" class="w-32 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg border-b-4 border-blue-800 active:translate-y-1 active:border-b-0">Azul</button>
-                        <button onclick="checkRoom25('yellow')" class="w-32 bg-yellow-600 hover:bg-yellow-500 text-slate-900 font-bold py-4 rounded-xl shadow-lg border-b-4 border-yellow-800 active:translate-y-1 active:border-b-0">Amarelo</button>
-                    </div>
-                    <div id="room25-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity">Errado. Olhe com atenção para a quantidade de bolas de cada cor.</div>
-                </div>
-            `;
-        }
-        function checkRoom25(color) {
-            if(color === 'red') { showModal("Isso Mesmo!", "A cor vermelha possui muito mais bolas que as outras, logo é a mais provável de ser sorteada.", "🎯", "Próxima Sala ➔"); }
-            else { document.getElementById('room25-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room25-error').classList.add('opacity-0'), 3000); }
-        }
-
-        // STAGE 26: Frações Equivalentes
-        function renderRoom26() {
-            container.innerHTML = `
-                <div class="w-full max-w-3xl flex flex-col items-center">
-                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-indigo-400 font-title mb-4 flex items-center justify-center gap-2"><span>🧩</span> Os Espelhos Mágicos</h2>
-                        <p class="text-lg text-slate-200">Qual das imagens abaixo representa uma fração <span class="text-indigo-400 font-bold">EQUIVALENTE (igual)</span> a <strong class="text-2xl text-yellow-400 ml-2">1/2</strong> ?</p>
+                        <p class="text-lg text-slate-200">Qual das imagens abaixo representa uma fração <span class="text-indigo-400 font-bold">EQUIVALENTE</span> a <strong class="text-2xl text-yellow-400 ml-2">1/2</strong> ?</p>
                     </div>
                     
                     <div class="flex flex-col md:flex-row gap-6 md:gap-10">
-                        <div onclick="checkRoom26('3/4')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-indigo-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
-                            <div class="w-24 h-24 rounded-full border-4 border-slate-500 flex flex-wrap overflow-hidden mb-4 group-hover:scale-110 transition">
-                                <div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div>
-                                <div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div>
-                            </div>
+                        <div onclick="checkRoom22('3/4')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-indigo-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
+                            <div class="w-24 h-24 rounded-full border-4 border-slate-500 flex flex-wrap overflow-hidden mb-4 group-hover:scale-110 transition"><div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div></div>
                             <span class="text-slate-300 font-bold text-xl">3/4</span>
                         </div>
-                        <div onclick="checkRoom26('2/4')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-indigo-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
-                            <div class="w-24 h-24 rounded-full border-4 border-slate-500 flex flex-wrap overflow-hidden mb-4 group-hover:scale-110 transition">
-                                <div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div>
-                                <div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div>
-                            </div>
+                        <div onclick="checkRoom22('2/4')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-indigo-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
+                            <div class="w-24 h-24 rounded-full border-4 border-slate-500 flex flex-wrap overflow-hidden mb-4 group-hover:scale-110 transition"><div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div></div>
                             <span class="text-slate-300 font-bold text-xl">2/4</span>
                         </div>
-                        <div onclick="checkRoom26('1/4')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-indigo-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
-                            <div class="w-24 h-24 rounded-full border-4 border-slate-500 flex flex-wrap overflow-hidden mb-4 group-hover:scale-110 transition">
-                                <div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div>
-                                <div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div>
-                            </div>
+                        <div onclick="checkRoom22('1/4')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-indigo-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
+                            <div class="w-24 h-24 rounded-full border-4 border-slate-500 flex flex-wrap overflow-hidden mb-4 group-hover:scale-110 transition"><div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div></div>
                             <span class="text-slate-300 font-bold text-xl">1/4</span>
                         </div>
                     </div>
-                    <div id="room26-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity">A área pintada não representa metade do círculo inteiro.</div>
+                    <div id="room22-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity">A área pintada não representa metade!</div>
                 </div>
             `;
         }
-        function checkRoom26(frac) {
-            if(frac === '2/4') { showModal("Fração Correta!", "Genial! 2 fatias de 4 representam a mesma quantidade que 1 fatia de 2. (Equivalência)", "🍕", "Próxima Sala ➔"); }
-            else { document.getElementById('room26-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room26-error').classList.add('opacity-0'), 3000); }
+        function checkRoom22(frac) {
+            if(frac === '2/4') { showModal("Fração Correta!", "Genial! 2 fatias de 4 representam a mesma quantidade que 1/2.", "🧩", "Avançar para Transição ➔"); }
+            else { document.getElementById('room22-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room22-error').classList.add('opacity-0'), 3000); }
         }
 
-        // STAGE 27: Números Negativos
-        function renderRoom27() {
-            let fillHeight = ((tempValue + 10) / 20) * 100;
-            if (fillHeight > 100) fillHeight = 100; if (fillHeight < 0) fillHeight = 0;
-            
+
+        // ======================= TRANSIÇÃO (STAGE 23) ======================= //
+
+        function renderSecretTransition() {
+            container.innerHTML = `
+                <div class="text-center max-w-2xl bg-slate-900 p-8 md:p-12 rounded-[2rem] border-8 border-red-600 animate-pulse-red shadow-2xl relative">
+                    <div class="text-7xl md:text-8xl mb-6">🛑🤫</div>
+                    <h2 class="text-4xl md:text-6xl text-red-500 font-title mb-6">Atenção!</h2>
+                    <p class="text-xl md:text-2xl text-slate-200 mb-8 font-bold">Você concluiu as 22 fases normais.</p>
+                    <p class="text-lg text-slate-400 mb-10 border-t border-slate-700 pt-6">
+                        A partir daqui as regras mudam. Teremos o <strong class="text-yellow-400 uppercase tracking-wider text-xl">Modo Prova Final</strong>.<br>
+                        Serão 5 situações-problema desafiadoras envolvendo fração, área, sistema monetário e lógica, exigindo leitura cuidadosa.
+                    </p>
+                    <div class="flex flex-col gap-6 items-center">
+                        <button onclick="nextStage()" class="bg-red-600 hover:bg-red-500 text-white font-title text-2xl py-5 px-10 rounded-full shadow-[0_0_20px_rgba(220,38,38,0.5)] transition-all transform hover:scale-105 active:scale-95 w-full md:w-auto">
+                            Desafio Secreto, vai encarar? ➔
+                        </button>
+                        <button onclick="currentStage=29; renderStage();" class="text-slate-500 underline hover:text-white transition">
+                            Não, prefiro finalizar por aqui.
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ======================= DESAFIOS SECRETOS (24 a 28) ======================= //
+
+        // Hard Q1: Fração Situacional
+        function renderHardQ1() {
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
-                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
-                        <h2 class="text-3xl text-cyan-200 font-title mb-4 flex items-center justify-center gap-2"><span>❄️</span> O Porão Congelado</h2>
-                        <p class="text-lg text-slate-200">A temperatura era de <strong class="text-yellow-400">3°C</strong>. Durante a noite, <strong class="text-cyan-300">caiu 5 graus</strong>.<br>Ajuste o termômetro para a nova temperatura exata.</p>
+                    <div class="bg-slate-800/80 p-8 rounded-3xl border-2 border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.2)] text-left mb-8 w-full">
+                        <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                            <h2 class="text-2xl text-red-400 font-title">Desafio Secreto 1</h2>
+                            <span class="text-3xl">🚌</span>
+                        </div>
+                        <p class="text-xl text-slate-200 font-bold leading-relaxed">
+                            "Um ônibus de excursão escolar tem exatamente <span class="text-yellow-400">40 lugares</span>. A professora contou e viu que <span class="text-yellow-400">3/4</span> (três quartos) desses lugares estão ocupados por alunos."
+                        </p>
+                        <p class="text-lg text-slate-300 mt-4 italic">
+                            Quantos alunos estão presentes no ônibus?
+                        </p>
                     </div>
                     
-                    <div class="flex items-center gap-10 bg-slate-900 p-8 rounded-3xl border-4 border-slate-700 shadow-2xl mb-8">
-                        <!-- Controls -->
-                        <div class="flex flex-col gap-4">
-                            <button onclick="changeTemp(1)" class="w-16 h-16 bg-red-600/80 hover:bg-red-500 text-white text-3xl font-bold rounded-full shadow-lg transition active:scale-90">+</button>
-                            <div class="text-4xl font-title text-slate-200 text-center w-16 py-2">${tempValue}°</div>
-                            <button onclick="changeTemp(-1)" class="w-16 h-16 bg-blue-600/80 hover:bg-blue-500 text-white text-3xl font-bold rounded-full shadow-lg transition active:scale-90">-</button>
-                        </div>
-
-                        <!-- Thermometer -->
-                        <div class="flex flex-col items-center relative">
-                            <div class="w-8 h-48 bg-slate-800 rounded-t-full border-4 border-b-0 border-slate-500 relative overflow-hidden flex flex-col justify-end p-1">
-                                <div class="w-full bg-gradient-to-t from-red-600 to-red-400 rounded-t transition-all duration-300" style="height: ${fillHeight}%;"></div>
-                            </div>
-                            <div class="w-16 h-16 bg-red-600 rounded-full border-4 border-slate-500 -mt-4 z-10 shadow-inner"></div>
-                            
-                            <!-- Scale Marks -->
-                            <div class="absolute left-full top-0 h-48 flex flex-col justify-between text-xs font-bold text-slate-400 ml-2 py-2">
-                                <span>10</span><span>0</span><span>-10</span>
-                            </div>
+                    <div class="bg-slate-900 p-6 rounded-3xl border-4 border-slate-700 w-64 shadow-2xl">
+                        <div class="bg-slate-800 h-16 rounded-xl mb-4 flex items-center justify-end px-4 text-3xl font-title text-red-300 border-2 border-slate-950 overflow-hidden">${hardQ1Input || "_"}</div>
+                        <div class="grid grid-cols-3 gap-2">
+                            ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="typeHardQ1('${n}')" class="bg-slate-700 hover:bg-red-600 text-white text-2xl font-bold py-3 rounded-lg active:scale-95">${n}</button>`).join('')}
+                            <button onclick="typeHardQ1('C')" class="bg-slate-800 text-red-300 text-xl font-bold py-3 rounded-lg active:scale-95">C</button>
+                            <button onclick="typeHardQ1('0')" class="bg-slate-700 hover:bg-red-600 text-white text-2xl font-bold py-3 rounded-lg active:scale-95">0</button>
+                            <button onclick="checkHardQ1()" class="bg-red-600 hover:bg-red-500 text-white text-xl font-bold py-3 rounded-lg active:scale-95">OK</button>
                         </div>
                     </div>
-                    
-                    <button onclick="checkRoom27()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Confirmar Temperatura</button>
-                    <div id="room27-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Temperatura incorreta! Lembre-se, descer abaixo de zero significa números negativos.</div>
+                    <div id="hq1-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Valor Incorreto. Dica: Divida 40 por 4 e depois multiplique por 3.</div>
                 </div>
             `;
         }
-        function changeTemp(d) { tempValue += d; if(tempValue > 10) tempValue=10; if(tempValue < -10) tempValue=-10; renderRoom27(); }
-        function checkRoom27() {
-            if(tempValue === -2) { showModal("Temperatura Correta!", "Exato! 3 desce 3 para chegar a zero, e desce mais 2, chegando a -2°C graus negativos.", "🌡️", "Último Desafio ➔"); }
-            else { document.getElementById('room27-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room27-error').classList.add('opacity-0'), 3500); }
+        function typeHardQ1(char) { if(char === 'C') hardQ1Input = ""; else if (hardQ1Input.length < 3) hardQ1Input += char; renderHardQ1(); }
+        function checkHardQ1() {
+            if (hardQ1Input === "30") { showModal("Resposta Certa!", "Muito bem! 40 dividido por 4 é 10. Vezes 3 = 30 alunos.", "✅", "Próximo Desafio ➔"); }
+            else { hardQ1Input = ""; document.getElementById('hq1-error').classList.remove('opacity-0'); setTimeout(() => { document.getElementById('hq1-error').classList.add('opacity-0'); renderHardQ1(); }, 3500); }
         }
 
-        // STAGE 28: Expressão com Parênteses
-        function renderRoom28() {
-            let dialsHTML = '';
-            for(let i=0; i<3; i++) {
-                dialsHTML += `
-                    <div class="flex flex-col items-center bg-slate-800 p-3 md:p-6 rounded-2xl border-4 border-slate-700 shadow-inner w-20 md:w-28">
-                        <button onclick="changeParenDial(${i}, 1)" class="w-full h-10 md:h-12 bg-slate-700 hover:bg-indigo-600 rounded-t-lg flex items-center justify-center text-2xl transition-colors active:bg-indigo-400">▲</button>
-                        <div class="h-20 md:h-24 w-full flex items-center justify-center bg-slate-900 border-y-2 border-slate-950 shadow-inner">
-                            <span class="text-5xl md:text-6xl font-title text-purple-400 font-bold">${parenDials[i]}</span>
-                        </div>
-                        <button onclick="changeParenDial(${i}, -1)" class="w-full h-10 md:h-12 bg-slate-700 hover:bg-indigo-600 rounded-b-lg flex items-center justify-center text-2xl transition-colors active:bg-indigo-400">▼</button>
-                    </div>
-                `;
-            }
+        // Hard Q2: Área / Divisão
+        function renderHardQ2() {
             container.innerHTML = `
-                <div class="w-full max-w-4xl flex flex-col items-center animate-float" style="animation-duration: 6s;">
-                    <div class="bg-gradient-to-b from-slate-900 to-purple-950 p-6 md:p-10 rounded-[2rem] border-8 border-purple-900 shadow-[0_0_80px_rgba(147,51,234,0.5)] text-center w-full relative">
-                        <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 text-5xl md:text-6xl">👑</div>
-                        <h2 class="text-3xl md:text-4xl text-white font-title mb-4 mt-6 drop-shadow-md">O Cofre do Mestre</h2>
-                        <p class="text-lg md:text-xl text-purple-200 mb-6 font-bold">A última tranca obedece a regra de ouro: <br><span class="text-yellow-400">Resolva o que está dentro dos Parênteses ( ) PRIMEIRO!</span></p>
-                        
-                        <div class="bg-slate-900/80 p-6 rounded-2xl border-2 border-purple-800/50 inline-block text-2xl md:text-3xl font-bold text-slate-200 mb-8 w-full max-w-md text-left">
-                            <div class="mb-4 flex items-center justify-between"><span>( 10 - 2 ) ÷ 2 =</span> <span class="text-purple-400">1º Dígito</span></div>
-                            <div class="mb-4 flex items-center justify-between"><span>3 × ( 1 + 2 ) =</span> <span class="text-purple-400">2º Dígito</span></div>
-                            <div class="mb-2 flex items-center justify-between"><span>20 ÷ ( 6 - 2 ) =</span> <span class="text-purple-400">3º Dígito</span></div>
+                <div class="w-full max-w-3xl flex flex-col items-center">
+                    <div class="bg-slate-800/80 p-8 rounded-3xl border-2 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)] text-left mb-8 w-full">
+                        <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                            <h2 class="text-2xl text-orange-400 font-title">Desafio Secreto 2</h2>
+                            <span class="text-3xl">🧱</span>
                         </div>
-                        <div class="flex justify-center gap-4 md:gap-8 bg-slate-900/50 p-6 rounded-3xl mx-auto w-fit">${dialsHTML}</div>
-                        <div id="room28-error" class="h-8 mt-6 text-red-400 font-bold text-lg opacity-0 transition-opacity">Combinação final incorreta!</div>
+                        <p class="text-xl text-slate-200 font-bold leading-relaxed">
+                            "O Sr. João vai colocar piso em um quintal retangular de <span class="text-yellow-400">8m de largura por 6m de comprimento</span>. Cada caixa de piso vendida na loja cobre exatamente <span class="text-yellow-400">2m²</span>."
+                        </p>
+                        <p class="text-lg text-slate-300 mt-4 italic">
+                            Quantas caixas de piso ele precisará comprar no total?
+                        </p>
                     </div>
+                    
+                    <div class="flex gap-4 md:gap-8 bg-slate-900 p-6 rounded-3xl shadow-2xl border-4 border-slate-700">
+                        ${[0,1].map(i => `
+                            <div class="flex flex-col items-center bg-slate-800 p-3 rounded-xl border-2 border-slate-600 w-24">
+                                <button onclick="chgHQ2Dial(${i}, 1)" class="w-full bg-slate-700 hover:bg-orange-600 rounded-t py-2 text-white">▲</button>
+                                <div class="text-5xl font-title text-orange-400 py-3">${hardQ2Dials[i]}</div>
+                                <button onclick="chgHQ2Dial(${i}, -1)" class="w-full bg-slate-700 hover:bg-orange-600 rounded-b py-2 text-white">▼</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button onclick="checkHardQ2()" class="mt-8 bg-orange-600 hover:bg-orange-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Comprar Caixas</button>
+                    <div id="hq2-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Incorreto. Descubra a área total do quintal primeiro, depois divida por 2m².</div>
                 </div>
             `;
         }
-        function changeParenDial(index, delta) {
-            parenDials[index] += delta; if (parenDials[index] > 9) parenDials[index] = 0; if (parenDials[index] < 0) parenDials[index] = 9; renderRoom28();
-            // Answers: (10-2)/2 = 8/2 = 4.  3*(1+2) = 3*3 = 9.  20/(6-2) = 20/4 = 5.
-            if (parenDials[0] === 4 && parenDials[1] === 9 && parenDials[2] === 5) { setTimeout(() => nextStage(), 800); }
+        function chgHQ2Dial(idx, d) {
+            hardQ2Dials[idx] += d; if (hardQ2Dials[idx] > 9) hardQ2Dials[idx] = 0; if (hardQ2Dials[idx] < 0) hardQ2Dials[idx] = 9; renderHardQ2();
+        }
+        function checkHardQ2() {
+            // Area = 8*6 = 48. Boxes = 48/2 = 24.
+            if (hardQ2Dials[0] === 2 && hardQ2Dials[1] === 4) { showModal("Piso Calculado!", "Correto! A área é 48m². Dividido por 2, são 24 caixas.", "🧱", "Próximo Desafio ➔"); }
+            else { document.getElementById('hq2-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('hq2-error').classList.add('opacity-0'), 4000); }
+        }
+
+        // Hard Q3: Dinheiro / Multiplicação
+        function renderHardQ3() {
+            container.innerHTML = `
+                <div class="w-full max-w-3xl flex flex-col items-center">
+                    <div class="bg-slate-800/80 p-8 rounded-3xl border-2 border-emerald-500/50 shadow-[0_0_30px_rgba(16,185,129,0.2)] text-left mb-8 w-full">
+                        <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                            <h2 class="text-2xl text-emerald-400 font-title">Desafio Secreto 3</h2>
+                            <span class="text-3xl">💵</span>
+                        </div>
+                        <p class="text-xl text-slate-200 font-bold leading-relaxed">
+                            "A diretora comprou <span class="text-yellow-400">15 pacotes</span> de livros para a biblioteca. Cada pacote custou <span class="text-yellow-400">R$ 45,00</span>. Ela entregou no caixa uma nota de <span class="text-yellow-400">R$ 1.000,00</span>."
+                        </p>
+                        <p class="text-lg text-slate-300 mt-4 italic">
+                            Qual deve ser o valor exato do troco que ela vai receber?
+                        </p>
+                    </div>
+                    
+                    <div class="bg-slate-900 p-6 rounded-3xl border-4 border-slate-700 w-64 shadow-2xl">
+                        <div class="bg-slate-800 h-16 rounded-xl mb-4 flex items-center justify-between px-4 text-3xl font-title text-emerald-300 border-2 border-slate-950 overflow-hidden">
+                            <span class="text-slate-500 text-lg">R$</span> <span>${hardQ3Input || "_"}</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="typeHardQ3('${n}')" class="bg-slate-700 hover:bg-emerald-600 text-white text-2xl font-bold py-3 rounded-lg active:scale-95">${n}</button>`).join('')}
+                            <button onclick="typeHardQ3('C')" class="bg-slate-800 text-emerald-300 text-xl font-bold py-3 rounded-lg active:scale-95">C</button>
+                            <button onclick="typeHardQ3('0')" class="bg-slate-700 hover:bg-emerald-600 text-white text-2xl font-bold py-3 rounded-lg active:scale-95">0</button>
+                            <button onclick="checkHardQ3()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xl font-bold py-3 rounded-lg active:scale-95">OK</button>
+                        </div>
+                    </div>
+                    <div id="hq3-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Troco errado! Calcule 15 vezes 45, e depois subtraia de 1000.</div>
+                </div>
+            `;
+        }
+        function typeHardQ3(char) { if(char === 'C') hardQ3Input = ""; else if (hardQ3Input.length < 4) hardQ3Input += char; renderHardQ3(); }
+        function checkHardQ3() {
+            // 15 * 45 = 675. 1000 - 675 = 325.
+            if (hardQ3Input === "325") { showModal("Troco Exato!", "Lindo cálculo! 15 x 45 = 675. 1000 - 675 = 325 Reais.", "✅", "Próximo Desafio ➔"); }
+            else { hardQ3Input = ""; document.getElementById('hq3-error').classList.remove('opacity-0'); setTimeout(() => { document.getElementById('hq3-error').classList.add('opacity-0'); renderHardQ3(); }, 4000); }
+        }
+
+        // Hard Q4: Porcentagem / Capacidade
+        function renderHardQ4() {
+            container.innerHTML = `
+                <div class="w-full max-w-3xl flex flex-col items-center">
+                    <div class="bg-slate-800/80 p-8 rounded-3xl border-2 border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.2)] text-left mb-8 w-full">
+                        <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                            <h2 class="text-2xl text-blue-400 font-title">Desafio Secreto 4</h2>
+                            <span class="text-3xl">🚰</span>
+                        </div>
+                        <p class="text-xl text-slate-200 font-bold leading-relaxed">
+                            "Um grande reservatório de água estava cheio com <span class="text-yellow-400">500 litros</span>. Após um cano estourar, o reservatório perdeu exatamente <span class="text-yellow-400">20%</span> da sua capacidade total."
+                        </p>
+                        <p class="text-lg text-slate-300 mt-4 italic">
+                            Quantos litros de água <u class="text-blue-300 font-bold">SOBRARAM</u> no reservatório? Use o painel para deixar o nível exato.
+                        </p>
+                    </div>
+                    
+                    <div class="flex flex-col md:flex-row gap-8 items-center bg-slate-900 p-8 rounded-3xl border-4 border-slate-700">
+                        <div class="relative w-32 h-48 border-4 border-slate-500 rounded-b-xl overflow-hidden bg-slate-950 flex flex-col justify-end">
+                            <div class="w-full bg-blue-500/80 transition-all duration-500 border-t-2 border-blue-300" style="height: ${(hardQ4Water/500)*100}%;"></div>
+                            <div class="absolute inset-0 flex items-center justify-center font-bold text-2xl text-white drop-shadow-md">${hardQ4Water} L</div>
+                        </div>
+                        <div class="flex flex-col gap-3">
+                            <button onclick="addHQ4Water(100)" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg w-32">+ 100 L</button>
+                            <button onclick="addHQ4Water(50)" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg w-32">+ 50 L</button>
+                            <button onclick="hardQ4Water = 0; renderHardQ4()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 py-2 px-6 rounded-xl mt-2 w-32">Zerar</button>
+                        </div>
+                    </div>
+                    <button onclick="checkHardQ4()" class="mt-8 bg-blue-600 hover:bg-blue-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Confirmar Restante</button>
+                    <div id="hq4-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Volume Errado. Descubra quanto é 20% de 500, e subtraia isso dos 500L iniciais!</div>
+                </div>
+            `;
+        }
+        function addHQ4Water(v) { hardQ4Water += v; if(hardQ4Water > 500) hardQ4Water = 500; renderHardQ4(); }
+        function checkHardQ4() {
+            // 20% of 500 = 100. 500 - 100 = 400 left.
+            if (hardQ4Water === 400) { showModal("Volume Exato!", "Isso mesmo! Ele perdeu 100 litros (20%), então sobraram 400 litros.", "🚰", "Ir para a Última Senha ➔"); }
+            else { document.getElementById('hq4-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('hq4-error').classList.add('opacity-0'), 4000); }
+        }
+
+        // Hard Q5: Lógica / Múltiplos
+        function renderHardQ5() {
+            container.innerHTML = `
+                <div class="w-full max-w-3xl flex flex-col items-center">
+                    <div class="bg-slate-800/80 p-8 rounded-3xl border-2 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.2)] text-left mb-8 w-full">
+                        <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                            <h2 class="text-2xl text-purple-400 font-title">O Desafio Final</h2>
+                            <span class="text-3xl">🔑</span>
+                        </div>
+                        <p class="text-xl text-slate-200 font-bold leading-relaxed mb-4">
+                            A senha mestra para escapar tem 3 algarismos. Siga as pistas:
+                        </p>
+                        <ul class="text-lg text-slate-300 space-y-2 list-disc pl-6">
+                            <li>O número é um <span class="text-yellow-400 font-bold">múltiplo de 5</span>.</li>
+                            <li>É um número <span class="text-yellow-400 font-bold">maior que 100 e menor que 110</span>.</li>
+                            <li>A soma matemática de todos os seus 3 algarismos é <span class="text-yellow-400 font-bold">igual a 6</span>.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="flex gap-4 md:gap-6 bg-slate-900 p-6 md:p-10 rounded-3xl shadow-2xl border-4 border-slate-700">
+                        ${[0,1,2].map(i => `
+                            <div class="flex flex-col items-center bg-slate-800 p-3 rounded-xl border-2 border-slate-600 w-20 md:w-24">
+                                <button onclick="chgHQ5Dial(${i}, 1)" class="w-full bg-slate-700 hover:bg-purple-600 rounded-t py-2 text-white">▲</button>
+                                <div class="text-5xl md:text-6xl font-title text-purple-400 py-3">${hardQ5Dials[i]}</div>
+                                <button onclick="chgHQ5Dial(${i}, -1)" class="w-full bg-slate-700 hover:bg-purple-600 rounded-b py-2 text-white">▼</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button onclick="checkHardQ5()" class="mt-8 bg-purple-600 hover:bg-purple-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)]">Destrancar a Última Porta</button>
+                    <div id="hq5-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">A senha não obedece a todas as regras da pista. Leia com cuidado!</div>
+                </div>
+            `;
+        }
+        function chgHQ5Dial(idx, d) {
+            hardQ5Dials[idx] += d; if (hardQ5Dials[idx] > 9) hardQ5Dials[idx] = 0; if (hardQ5Dials[idx] < 0) hardQ5Dials[idx] = 9; renderHardQ5();
+        }
+        function checkHardQ5() {
+            // Múltiplos de 5 entre 100 e 110: apenas 105. Soma: 1+0+5=6. Senha: 105.
+            if (hardQ5Dials[0] === 1 && hardQ5Dials[1] === 0 && hardQ5Dials[2] === 5) {
+                setTimeout(() => currentStage=29, 200); setTimeout(() => renderStage(), 200);
+            } else { document.getElementById('hq5-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('hq5-error').classList.add('opacity-0'), 4000); }
         }
 
         // ======================= WIN SCREEN (STAGE 29) ======================= //
@@ -1415,7 +1275,7 @@
                         A Mansão Inteira foi desvendada!
                     </p>
                     <p class="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed">
-                        Você completou <span class="text-yellow-400 font-bold">28 DESAFIOS EXTREMOS</span>. Sua lógica em frações, decimais, gráficos, ângulos e equações o transformou na Lenda da Matemática do 5º ano!
+                        Parabéns! Sua lógica em frações, porcentagens, áreas e leitura de problemas o transformou na <strong class="text-yellow-400">Lenda da Matemática do 5º ano!</strong>
                     </p>
                     <button onclick="resetGame()" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-title text-xl py-4 px-12 rounded-full shadow-[0_0_30px_rgba(34,197,94,0.6)] hover:shadow-[0_0_50px_rgba(34,197,94,0.8)] transition-all transform hover:scale-105 active:scale-95">
                         JOGAR NOVAMENTE ↺
