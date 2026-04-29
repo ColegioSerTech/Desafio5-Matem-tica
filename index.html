@@ -96,7 +96,7 @@
             <h1 class="text-xl md:text-2xl text-indigo-100 tracking-wide">Mansão Matemática</h1>
         </div>
         <div id="progress-container" class="hidden flex flex-col items-end gap-1 w-1/3 max-w-[200px]">
-            <span id="progress-text" class="text-slate-300 font-bold text-sm">Sala 1 / 20</span>
+            <span id="progress-text" class="text-slate-300 font-bold text-sm">Sala 1 / 28</span>
             <div class="w-full bg-slate-700 h-3 rounded-full overflow-hidden border border-slate-600">
                 <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full w-0 transition-all duration-500"></div>
             </div>
@@ -123,11 +123,11 @@
     <script>
         // Game State
         let currentStage = 0;
-        const totalStages = 20;
+        const totalStages = 28;
 
         // Room 1 State (Cofre Dificultado)
         let safeDigits = [0, 0, 0, 0];
-        const correctDigits = [9, 8, 6, 3]; // Maior ÍMPAR com 8,3,9,6
+        const correctDigits = [9, 8, 6, 3]; 
 
         // Room 2 State (Pizza)
         let pizzaSlices = [false, false, false, false, false, false, false, false]; 
@@ -148,9 +148,9 @@
         let cubeVertices = Array(8).fill(false);
         let doorDials = [0, 0, 0, 0];
         const correctDoorDials = [3, 4, 5, 6];
-        let multiplesState = Array(12).fill(false); // Sala 16
+        let multiplesState = Array(12).fill(false); 
 
-        // New Rooms States (17 to 20)
+        // Rooms 17 to 20 States
         let measuresPool = [
             {id: 1, text: '150 cm', val: 1.5},
             {id: 2, text: '0,5 km', val: 500},
@@ -158,13 +158,17 @@
             {id: 4, text: '2500 mm', val: 2.5}
         ];
         let placedMeasures = [null, null, null, null];
-        let selectedMeasure = null; // Para a mecânica click-to-move da Sala 17
+        let selectedMeasure = null; 
+        let chartBars = [0, 0, 0]; 
+        let padLockPath = []; 
+        let bossDials = [0, 0]; 
 
-        let chartBars = [0, 0, 0]; // Valores atuais da Sala 18
-        
-        let padLockPath = []; // Setas digitadas na Sala 19
-        
-        let bossDials = [0, 0]; // Dials da Sala 20 (Criptograma)
+        // New Rooms States (21 to 28)
+        let batteryLevel = 0; // Room 22
+        let decSeqWhole = 0, decSeqFrac = 0; // Room 23
+        let chestCoins = [0, 0, 0, 0]; let coinsToDistribute = 24; // Room 24
+        let tempValue = 3; // Room 27
+        let parenDials = [0, 0, 0]; // Room 28
 
         // Utility to update stars/progress
         function updateProgress() {
@@ -245,6 +249,12 @@
             chartBars = [0, 0, 0];
             padLockPath = [];
             bossDials = [0, 0];
+
+            batteryLevel = 0;
+            decSeqWhole = 0; decSeqFrac = 0;
+            chestCoins = [0, 0, 0, 0]; coinsToDistribute = 24;
+            tempValue = 3;
+            parenDials = [0, 0, 0];
             
             renderStage();
         }
@@ -280,7 +290,15 @@
                 case 18: renderRoom18(); break;
                 case 19: renderRoom19(); break;
                 case 20: renderRoom20(); break;
-                case 21: renderWin(); break;
+                case 21: renderRoom21(); break;
+                case 22: renderRoom22(); break;
+                case 23: renderRoom23(); break;
+                case 24: renderRoom24(); break;
+                case 25: renderRoom25(); break;
+                case 26: renderRoom26(); break;
+                case 27: renderRoom27(); break;
+                case 28: renderRoom28(); break;
+                case 29: renderWin(); break;
             }
         }
 
@@ -293,10 +311,10 @@
                         Fuga da Mansão Matemática
                     </h1>
                     <p class="text-xl md:text-2xl text-slate-300 mb-10 leading-relaxed font-bold">
-                        Modo Difícil e Expandido! (20 Desafios)
+                        A Edição Definitiva! (28 Desafios)
                     </p>
                     <p class="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed">
-                        Você precisará de muito raciocínio lógico para superar os 20 enigmas do 5º ano e escapar.
+                        Você precisará de raciocínio afiado para superar os 28 enigmas do 5º ano. Frações, geometria, decimais e lógica esperam por você!
                     </p>
                     <button onclick="nextStage()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-title text-2xl py-4 px-12 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)] hover:shadow-[0_0_30px_rgba(79,70,229,0.8)] transition-all transform hover:scale-105 active:scale-95">
                         ENTRAR NA MANSÃO ➔
@@ -305,7 +323,7 @@
             `;
         }
 
-        // ======================= SALAS 1 a 16 (EXISTENTES) ======================= //
+        // ======================= SALAS 1 a 20 (EXISTENTES) ======================= //
 
         function renderRoom1() {
             let dialsHTML = '';
@@ -320,7 +338,6 @@
                     </div>
                 `;
             }
-
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 shadow-2xl text-center mb-10 w-full relative overflow-hidden">
@@ -334,13 +351,10 @@
                     <div id="safe-container" class="flex gap-2 md:gap-6 p-6 md:p-10 bg-slate-700 rounded-3xl border-8 border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
                         ${dialsHTML}
                     </div>
-                    <div id="room1-error" class="h-8 mt-6 text-red-400 font-bold text-lg opacity-0 transition-opacity">
-                        Senha Incorreta. Tente novamente!
-                    </div>
+                    <div id="room1-error" class="h-8 mt-6 text-red-400 font-bold text-lg opacity-0 transition-opacity">Senha Incorreta. Tente novamente!</div>
                 </div>
             `;
         }
-
         function changeDigit(index, delta) {
             safeDigits[index] += delta;
             if (safeDigits[index] > 9) safeDigits[index] = 0;
@@ -351,19 +365,14 @@
             setTimeout(() => el.style.transform = 'scale(1)', 150);
             checkRoom1();
         }
-
         function checkRoom1() {
             const isCorrect = safeDigits.every((val, index) => val === correctDigits[index]);
-            const errorText = document.getElementById('room1-error');
-            const safeBox = document.getElementById('safe-container');
-            
             if (isCorrect) {
-                errorText.classList.add('opacity-0');
+                document.getElementById('room1-error').classList.add('opacity-0');
+                const safeBox = document.getElementById('safe-container');
                 safeBox.classList.add('unlock-anim', 'border-green-500');
                 safeBox.style.boxShadow = '0 0 50px rgba(34, 197, 94, 0.6)';
                 setTimeout(() => showModal("Cofre Aberto!", "Incrível! 9.863 é o maior número ímpar que pode ser formado, pois precisa terminar no 3. Você conseguiu a primeira chave!", "🗝️", "Próxima Sala ➔"), 800);
-            } else {
-                errorText.classList.add('opacity-0');
             }
         }
 
@@ -372,22 +381,17 @@
             for(let i=0; i<8; i++) {
                 const startAngle = (i * 45) * Math.PI / 180;
                 const endAngle = ((i+1) * 45) * Math.PI / 180;
-                const x1 = Math.sin(startAngle) * 100;
-                const y1 = -Math.cos(startAngle) * 100;
-                const x2 = Math.sin(endAngle) * 100;
-                const y2 = -Math.cos(endAngle) * 100;
+                const x1 = Math.sin(startAngle) * 100; const y1 = -Math.cos(startAngle) * 100;
+                const x2 = Math.sin(endAngle) * 100; const y2 = -Math.cos(endAngle) * 100;
                 const pathData = `M0,0 L${x1},${y1} A100,100 0 0,1 ${x2},${y2} Z`;
-                
                 slicesSVG += `
                     <g onclick="togglePizza(${i})" class="pizza-slice ${pizzaSlices[i] ? 'eaten' : ''}" id="slice-${i}">
                         <path d="${pathData}" fill="#d97706" stroke="#b45309" stroke-width="2"/>
                         <path d="M0,0 L${x1*0.85},${y1*0.85} A85,85 0 0,1 ${x2*0.85},${y2*0.85} Z" fill="#fbbf24"/>
                         <circle cx="${Math.sin(startAngle + 0.3)*60}" cy="${-Math.cos(startAngle + 0.3)*60}" r="8" fill="#ef4444" />
-                        <circle cx="${Math.sin(endAngle - 0.2)*75}" cy="${-Math.cos(endAngle - 0.2)*75}" r="6" fill="#dc2626" />
                     </g>
                 `;
             }
-
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 shadow-2xl text-center mb-8 w-full relative overflow-hidden">
@@ -407,7 +411,6 @@
                 </div>
             `;
         }
-
         function togglePizza(index) {
             pizzaSlices[index] = !pizzaSlices[index];
             const sliceEl = document.getElementById(`slice-${index}`);
@@ -415,7 +418,6 @@
             else sliceEl.classList.remove('eaten');
             document.getElementById('room2-error').classList.add('opacity-0');
         }
-
         function checkRoom2() {
             const eatenCount = pizzaSlices.filter(v => v).length;
             if (eatenCount === 4) {
@@ -434,7 +436,6 @@
         function renderRoom3() {
             const cols = 5; const rows = 3; const cellSize = 80;
             const width = cols * cellSize; const height = rows * cellSize;
-            
             let linesSVG = '';
             for(let r=0; r<rows; r++) {
                 for(let c=0; c<cols; c++) {
@@ -455,14 +456,6 @@
                     linesSVG += `<line x1="${c*cellSize}" y1="${r*cellSize}" x2="${c*cellSize}" y2="${(r+1)*cellSize}" class="grid-line" id="${id}" data-type="${isOuter ? 'outer' : 'inner'}" data-active="false" onclick="toggleGridLine('${id}')" />`;
                 }
             }
-
-            let dots = '';
-            for(let r=0; r<=rows; r++) {
-                for(let c=0; c<=cols; c++) {
-                    dots += `<circle cx="${c*cellSize}" cy="${r*cellSize}" r="4" fill="#475569" />`;
-                }
-            }
-
             container.innerHTML = `
                 <div class="w-full max-w-4xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 shadow-2xl text-center mb-6 w-full relative overflow-hidden">
@@ -478,10 +471,7 @@
                             <span>Energizados: <span id="perimeter-counter" class="text-teal-400 text-lg">0</span> / 16</span>
                         </div>
                         <div class="relative overflow-x-auto w-full flex justify-center py-4">
-                            <svg width="${width}" height="${height}" viewBox="-10 -10 ${width+20} ${height+20}" class="max-w-full drop-shadow-2xl" id="grid-svg">
-                                ${linesSVG}
-                                ${dots}
-                            </svg>
+                            <svg width="${width}" height="${height}" viewBox="-10 -10 ${width+20} ${height+20}" class="max-w-full drop-shadow-2xl" id="grid-svg">${linesSVG}</svg>
                         </div>
                     </div>
                     <div id="room3-error" class="mt-4 bg-red-900/50 border border-red-500 text-red-200 px-6 py-3 rounded-lg font-bold text-lg opacity-0 transition-opacity flex items-center gap-2">
@@ -490,45 +480,29 @@
                 </div>
             `;
         }
-
         function toggleGridLine(id) {
             const line = document.getElementById(id);
             const type = line.getAttribute('data-type');
-            const isActive = line.getAttribute('data-active') === 'true';
-            const errorMsg = document.getElementById('room3-error');
-            const svgBox = document.getElementById('grid-svg');
-
             if (type === 'inner') {
                 line.classList.add('active-inner');
-                errorMsg.classList.remove('opacity-0');
-                svgBox.classList.add('shake');
+                document.getElementById('room3-error').classList.remove('opacity-0');
+                document.getElementById('grid-svg').classList.add('shake');
                 setTimeout(() => {
                     line.classList.remove('active-inner');
-                    svgBox.classList.remove('shake');
-                    setTimeout(() => errorMsg.classList.add('opacity-0'), 2000);
+                    document.getElementById('grid-svg').classList.remove('shake');
+                    setTimeout(() => document.getElementById('room3-error').classList.add('opacity-0'), 2000);
                 }, 500);
                 return;
             }
-
-            if (isActive) {
-                line.setAttribute('data-active', 'false');
-                line.classList.remove('active-outer');
-                outerLinesActive--;
+            if (line.getAttribute('data-active') === 'true') {
+                line.setAttribute('data-active', 'false'); line.classList.remove('active-outer'); outerLinesActive--;
             } else {
-                line.setAttribute('data-active', 'true');
-                line.classList.add('active-outer');
-                outerLinesActive++;
+                line.setAttribute('data-active', 'true'); line.classList.add('active-outer'); outerLinesActive++;
             }
-
             document.getElementById('perimeter-counter').innerText = outerLinesActive;
-
             if (outerLinesActive === totalOuterLines) {
-                svgBox.classList.add('unlock-anim');
-                const allOuter = document.querySelectorAll('.grid-line[data-type="outer"]');
-                allOuter.forEach(el => {
-                    el.style.stroke = '#2dd4bf';
-                    el.style.filter = 'drop-shadow(0 0 12px #2dd4bf)';
-                });
+                document.getElementById('grid-svg').classList.add('unlock-anim');
+                document.querySelectorAll('.grid-line[data-type="outer"]').forEach(el => { el.style.stroke = '#2dd4bf'; el.style.filter = 'drop-shadow(0 0 12px #2dd4bf)'; });
                 setTimeout(() => showModal("Portal Ativado!", "Genial! Você circulou exatamente a borda. 5 + 5 + 3 + 3 = 16 metros de perímetro.", "🌌", "Próxima Sala ➔"), 1000);
             }
         }
@@ -539,8 +513,7 @@
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-purple-400 font-title mb-4 flex items-center justify-center gap-2"><span>🧪</span> Laboratório de Poções</h2>
                         <p class="text-lg text-slate-200">
-                            O caldeirão precisa de exatamente <span class="text-yellow-400 font-bold">1 Litro (1000 ml)</span> para revelar a passagem.<br>
-                            Misture as medidas corretas!
+                            O caldeirão precisa de exatamente <span class="text-yellow-400 font-bold">1 Litro (1000 ml)</span> para revelar a passagem.
                         </p>
                     </div>
                     <div class="flex flex-wrap justify-center gap-4 mb-8">
@@ -565,9 +538,7 @@
             } else if(cauldronVolume === 1000) {
                 renderRoom4();
                 setTimeout(() => showModal("Poção Pronta!", "Perfeito! Você somou as medidas até formar exatamente 1 Litro (1000 ml).", "🔮", "Próxima Sala ➔"), 600);
-            } else {
-                renderRoom4();
-            }
+            } else { renderRoom4(); }
         }
 
         function renderRoom5() {
@@ -576,8 +547,7 @@
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-blue-300 font-title mb-4 flex items-center justify-center gap-2"><span>⏱️</span> O Relógio da Estação</h2>
                         <p class="text-lg text-slate-200">
-                            O trem partiu às <span class="text-yellow-400 font-bold">14h45</span> e a viagem durou <span class="text-teal-400 font-bold">1 hora e 35 minutos</span>.<br>
-                            Ajuste o relógio para o horário exato de chegada.
+                            O trem partiu às <span class="text-yellow-400 font-bold">14h45</span> e a viagem durou <span class="text-teal-400 font-bold">1 hora e 35 minutos</span>.<br>Ajuste o relógio para o horário exato de chegada.
                         </p>
                     </div>
                     <div class="flex items-center gap-4 bg-slate-900 p-8 rounded-3xl border-4 border-slate-700 shadow-2xl">
@@ -599,8 +569,7 @@
             `;
         }
         function changeTime(dh, dm) {
-            clockTime.h = (clockTime.h + dh + 24) % 24;
-            clockTime.m += dm;
+            clockTime.h = (clockTime.h + dh + 24) % 24; clockTime.m += dm;
             if (clockTime.m >= 60) { clockTime.m -= 60; clockTime.h = (clockTime.h + 1) % 24; }
             if (clockTime.m < 0) { clockTime.m += 60; clockTime.h = (clockTime.h - 1 + 24) % 24; }
             renderRoom5();
@@ -609,9 +578,8 @@
             if (clockTime.h === 16 && clockTime.m === 20) {
                 showModal("Na hora certa!", "Exato! 14h45 + 1 hora = 15h45. Mais 35 minutos = 16h20.", "🚂", "Próxima Sala ➔");
             } else {
-                const err = document.getElementById('room5-error');
-                err.classList.remove('opacity-0');
-                setTimeout(() => err.classList.add('opacity-0'), 3500);
+                document.getElementById('room5-error').classList.remove('opacity-0');
+                setTimeout(() => document.getElementById('room5-error').classList.add('opacity-0'), 3500);
             }
         }
 
@@ -620,10 +588,7 @@
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-emerald-400 font-title mb-4 flex items-center justify-center gap-2"><span>💰</span> O Pedágio da Ponte</h2>
-                        <p class="text-lg text-slate-200">
-                            A catraca eletrônica cobra exatamente <span class="text-yellow-400 font-bold">R$ 4,50</span>.<br>
-                            Insira as moedas até atingir o valor exato!
-                        </p>
+                        <p class="text-lg text-slate-200">A catraca cobra exatamente <span class="text-yellow-400 font-bold">R$ 4,50</span>. Insira as moedas até atingir o valor exato!</p>
                     </div>
                     <div class="text-5xl font-title text-emerald-300 bg-slate-900 px-8 py-4 rounded-2xl border-2 border-emerald-900 mb-8 shadow-inner">
                         R$ ${chestMoney.toFixed(2).replace('.', ',')}
@@ -633,9 +598,7 @@
                         <button onclick="addMoney(0.50)" class="w-20 h-20 bg-slate-400 rounded-full border-4 border-slate-300 shadow-[0_5px_15px_rgba(0,0,0,0.5)] flex items-center justify-center text-lg font-bold hover:scale-105 active:scale-95 transition-transform mt-2 text-slate-800">R$ 0,50</button>
                         <button onclick="addMoney(0.25)" class="w-16 h-16 bg-yellow-700 rounded-full border-4 border-yellow-500 shadow-[0_5px_15px_rgba(0,0,0,0.5)] flex items-center justify-center text-sm font-bold hover:scale-105 active:scale-95 transition-transform mt-4 text-yellow-100">R$ 0,25</button>
                     </div>
-                    <div class="mt-8">
-                         <button onclick="chestMoney = 0; renderRoom6()" class="text-slate-400 underline hover:text-white">Pegar moedas de volta (Zerar)</button>
-                    </div>
+                    <div class="mt-8"><button onclick="chestMoney = 0; renderRoom6()" class="text-slate-400 underline hover:text-white">Pegar moedas de volta (Zerar)</button></div>
                     <div id="room6-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Passou do valor! A máquina devolveu o dinheiro.</div>
                 </div>
             `;
@@ -648,9 +611,7 @@
             } else if (Math.abs(chestMoney - 4.50) < 0.01) {
                 renderRoom6();
                 setTimeout(() => showModal("Pagamento Aceito!", "Catraca liberada. Você entende de sistema monetário!", "🪙", "Próxima Sala ➔"), 500);
-            } else {
-                renderRoom6();
-            }
+            } else { renderRoom6(); }
         }
 
         function renderRoom7() {
@@ -658,15 +619,10 @@
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-pink-400 font-title mb-4 flex items-center justify-center gap-2"><span>🚪</span> A Porta Gigante</h2>
-                        <p class="text-lg text-slate-200">
-                            A senha numérica é igual à <span class="text-pink-400 font-bold">ÁREA</span> de um salão com <span class="text-yellow-400 font-bold">15m</span> de comprimento e <span class="text-yellow-400 font-bold">12m</span> de largura.
-                        </p>
+                        <p class="text-lg text-slate-200">A senha numérica é igual à <span class="text-pink-400 font-bold">ÁREA</span> de um salão com <span class="text-yellow-400 font-bold">15m</span> de comprimento e <span class="text-yellow-400 font-bold">12m</span> de largura.</p>
                     </div>
-                    
                     <div class="bg-slate-900 p-6 rounded-3xl border-4 border-slate-700 w-64 shadow-2xl">
-                        <div class="bg-slate-800 h-16 rounded-xl mb-4 flex items-center justify-end px-4 text-3xl font-title text-pink-300 border-2 border-slate-950 shadow-inner overflow-hidden">
-                            ${areaKeypad || "_"}
-                        </div>
+                        <div class="bg-slate-800 h-16 rounded-xl mb-4 flex items-center justify-end px-4 text-3xl font-title text-pink-300 border-2 border-slate-950 shadow-inner overflow-hidden">${areaKeypad || "_"}</div>
                         <div class="grid grid-cols-3 gap-2">
                             ${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="typeArea('${n}')" class="bg-slate-700 hover:bg-pink-600 text-white text-2xl font-bold py-3 rounded-lg transition-colors active:scale-95">${n}</button>`).join('')}
                             <button onclick="typeArea('C')" class="bg-red-900/50 hover:bg-red-600 text-red-200 text-xl font-bold py-3 rounded-lg transition-colors active:scale-95">C</button>
@@ -687,10 +643,8 @@
             if (areaKeypad === "180") {
                 showModal("Porta Aberta!", "Excelente! 15m × 12m = 180 metros quadrados de área.", "📐", "Avançar ➔");
             } else {
-                areaKeypad = "";
-                const err = document.getElementById('room7-error');
-                err.classList.remove('opacity-0');
-                setTimeout(() => { err.classList.add('opacity-0'); renderRoom7(); }, 1500);
+                areaKeypad = ""; document.getElementById('room7-error').classList.remove('opacity-0');
+                setTimeout(() => { document.getElementById('room7-error').classList.add('opacity-0'); renderRoom7(); }, 1500);
             }
         }
 
@@ -700,35 +654,25 @@
                     <svg width="28" height="36" viewBox="0 0 24 32" fill="currentColor" class="mx-auto"><rect x="4" y="2" width="16" height="28" rx="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="26" r="1.5"/></svg>
                 </div>
             `).join('');
-
             container.innerHTML = `
                 <div class="w-full max-w-4xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-cyan-400 font-title mb-4 flex items-center justify-center gap-2"><span>📱</span> O Lote de Celulares</h2>
-                        <p class="text-lg text-slate-200">
-                            Márcio tinha 25 celulares na loja, mas vendeu 12.<br>
-                            Selecione os 12 celulares para embalar. Isso representa a fração <span class="text-cyan-400 font-bold text-xl">12/25</span>.
-                        </p>
+                        <p class="text-lg text-slate-200">Selecione os celulares para embalar representando a fração <span class="text-cyan-400 font-bold text-xl">12/25</span>.</p>
                     </div>
                     <div class="bg-slate-900 p-6 rounded-2xl border-2 border-slate-700 shadow-2xl mb-6">
-                        <div class="grid grid-cols-5 gap-3 md:gap-6">
-                            ${phonesHTML}
-                        </div>
+                        <div class="grid grid-cols-5 gap-3 md:gap-6">${phonesHTML}</div>
                     </div>
                     <button onclick="checkPhones()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Embalar Fração (12/25)</button>
                     <div id="room8-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity text-center">Quantidade errada. Você selecionou ${phonesPacked.filter(v=>v).length}/25.</div>
                 </div>
             `;
         }
-        function togglePhone(i) {
-            phonesPacked[i] = !phonesPacked[i];
-            renderRoom8();
-        }
+        function togglePhone(i) { phonesPacked[i] = !phonesPacked[i]; renderRoom8(); }
         function checkPhones() {
             const count = phonesPacked.filter(v => v).length;
-            if (count === 12) {
-                showModal("Lote Enviado!", "Muito bem! 12 de 25 representa a fração 12/25.", "📦", "Próxima Sala ➔");
-            } else {
+            if (count === 12) { showModal("Lote Enviado!", "Muito bem! 12 de 25 representa a fração 12/25.", "📦", "Próxima Sala ➔"); }
+            else {
                 document.getElementById('room8-error').innerText = `Quantidade errada. Você selecionou ${count}/25.`;
                 document.getElementById('room8-error').classList.remove('opacity-0');
                 setTimeout(() => document.getElementById('room8-error').classList.add('opacity-0'), 2000);
@@ -738,30 +682,20 @@
         function renderRoom9() {
             const leftPattern = [true, false, false, true, true, true, true, false];
             let gridHTML = '';
-            for(let i=0; i<8; i++) {
-                gridHTML += `<div class="w-10 h-10 md:w-16 md:h-16 border border-slate-600 ${leftPattern[i] ? 'bg-amber-500' : 'bg-slate-800'}"></div>`;
-            }
+            for(let i=0; i<8; i++) { gridHTML += `<div class="w-10 h-10 md:w-16 md:h-16 border border-slate-600 ${leftPattern[i] ? 'bg-amber-500' : 'bg-slate-800'}"></div>`; }
             let rightHTML = symGrid.map((active, i) => `
                 <div onclick="toggleSym(${i})" class="w-10 h-10 md:w-16 md:h-16 border border-slate-600 cursor-pointer transition-colors duration-200 ${active ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'bg-slate-800 hover:bg-slate-700'}"></div>
             `).join('');
-
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-amber-400 font-title mb-4 flex items-center justify-center gap-2"><span>🪟</span> O Vitral Partido</h2>
-                        <p class="text-lg text-slate-200">
-                            Para iluminar a sala, o vitral da direita deve ser uma imagem <span class="text-amber-400 font-bold">SIMÉTRICA</span> (como um espelho) do esquerdo.<br>
-                            Clique nos quadrados escuros para colorir.
-                        </p>
+                        <p class="text-lg text-slate-200">O vitral da direita deve ser uma imagem <span class="text-amber-400 font-bold">SIMÉTRICA</span> (como um espelho) do esquerdo.</p>
                     </div>
                     <div class="flex bg-slate-900 p-4 border-4 border-slate-700 rounded-xl shadow-2xl relative">
-                        <div class="grid grid-cols-2 grid-rows-4 w-20 h-40 md:w-32 md:h-64">
-                            ${gridHTML}
-                        </div>
+                        <div class="grid grid-cols-2 grid-rows-4 w-20 h-40 md:w-32 md:h-64">${gridHTML}</div>
                         <div class="w-2 bg-slate-500 h-40 md:h-64 mx-2"></div>
-                        <div class="grid grid-cols-2 grid-rows-4 w-20 h-40 md:w-32 md:h-64">
-                            ${rightHTML}
-                        </div>
+                        <div class="grid grid-cols-2 grid-rows-4 w-20 h-40 md:w-32 md:h-64">${rightHTML}</div>
                     </div>
                     <button onclick="checkSymmetry()" class="mt-8 bg-amber-600 hover:bg-amber-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Analisar Vitral</button>
                     <div id="room9-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">A imagem ainda não está perfeitamente simétrica.</div>
@@ -771,14 +705,8 @@
         function toggleSym(i) { symGrid[i] = !symGrid[i]; renderRoom9(); }
         function checkSymmetry() {
             const target = [false, true, true, false, true, true, false, true];
-            const isCorrect = symGrid.every((v, i) => v === target[i]);
-            if(isCorrect) {
-                showModal("Luz Restaurada!", "Lindo! Você domina o conceito de eixo de simetria geométrica.", "✨", "Prosseguir ➔");
-            } else {
-                const err = document.getElementById('room9-error');
-                err.classList.remove('opacity-0');
-                setTimeout(() => err.classList.add('opacity-0'), 2000);
-            }
+            if(symGrid.every((v, i) => v === target[i])) { showModal("Luz Restaurada!", "Lindo! Você domina o conceito de eixo de simetria geométrica.", "✨", "Prosseguir ➔"); }
+            else { document.getElementById('room9-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room9-error').classList.add('opacity-0'), 2000); }
         }
 
         function renderRoom10() {
@@ -786,10 +714,7 @@
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-rose-400 font-title mb-4 flex items-center justify-center gap-2"><span>🧮</span> A Maleta de Peças</h2>
-                        <p class="text-lg text-slate-200">
-                            Quantas peças formam o número <span class="text-rose-400 font-bold text-3xl">201</span> ?<br>
-                            Selecione a quantidade correta de Centenas, Dezenas e Unidades.
-                        </p>
+                        <p class="text-lg text-slate-200">Quantas peças formam o número <span class="text-rose-400 font-bold text-3xl">201</span> ?</p>
                     </div>
                     <div class="flex flex-wrap gap-4 md:gap-8 justify-center mb-8">
                         <div class="flex flex-col items-center bg-slate-900 p-4 rounded-2xl border-2 border-slate-700 w-24 md:w-28">
@@ -817,72 +742,47 @@
             `;
         }
         function chgDec(type, delta) {
-            decimalUnits[type] += delta;
-            if (decimalUnits[type] < 0) decimalUnits[type] = 9;
-            if (decimalUnits[type] > 9) decimalUnits[type] = 0;
+            decimalUnits[type] += delta; if (decimalUnits[type] < 0) decimalUnits[type] = 9; if (decimalUnits[type] > 9) decimalUnits[type] = 0;
             renderRoom10();
         }
         function checkDecimal() {
-            if (decimalUnits.c === 2 && decimalUnits.d === 0 && decimalUnits.u === 1) {
-                showModal("Composição Correta!", "Isso! 2 Centenas = 200, 0 Dezenas = 0, 1 Unidade = 1. Total: 201.", "💼", "Avançar ➔");
-            } else {
-                const err = document.getElementById('room10-error');
-                err.classList.remove('opacity-0');
-                setTimeout(() => err.classList.add('opacity-0'), 2000);
-            }
+            if (decimalUnits.c === 2 && decimalUnits.d === 0 && decimalUnits.u === 1) { showModal("Composição Correta!", "Isso! 2 Centenas = 200, 0 Dezenas = 0, 1 Unidade = 1. Total: 201.", "💼", "Avançar ➔"); }
+            else { document.getElementById('room10-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room10-error').classList.add('opacity-0'), 2000); }
         }
 
         function renderRoom11() {
             let rotation = (scaleWeight - 750) * 0.05; 
-            if (rotation < -20) rotation = -20;
-            if (rotation > 20) rotation = 20;
-
+            if (rotation < -20) rotation = -20; if (rotation > 20) rotation = 20;
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-12 w-full shadow-xl">
                         <h2 class="text-3xl text-orange-400 font-title mb-4 flex items-center justify-center gap-2"><span>⚖️</span> A Balança de Ouro</h2>
-                        <p class="text-lg text-slate-200">
-                            A porta só abre quando a balança estiver <span class="text-orange-400 font-bold">em equilíbrio</span>.<br>
-                            O bloco misterioso pesa <span class="text-yellow-400 font-bold">750g</span>. Coloque os pesos no prato direito.
-                        </p>
+                        <p class="text-lg text-slate-200">A porta só abre quando a balança estiver <span class="text-orange-400 font-bold">em equilíbrio</span>.<br>O bloco misterioso pesa <span class="text-yellow-400 font-bold">750g</span>.</p>
                     </div>
-                    
                     <div class="relative flex flex-col items-center mb-10 mt-10 w-full max-w-[300px]">
                         <div class="w-full h-4 bg-slate-600 rounded-full shadow-lg relative z-10 transition-transform duration-500" style="transform: rotate(${rotation}deg);">
-                            <div class="absolute -left-6 top-2 w-16 h-20 border-x-2 border-b-2 border-slate-400 rounded-b-xl flex items-end justify-center pb-1">
-                                <div class="bg-indigo-600 w-12 h-12 text-white font-bold flex items-center justify-center rounded shadow-lg text-sm">750g</div>
-                            </div>
-                            <div class="absolute -right-6 top-2 w-16 h-20 border-x-2 border-b-2 border-slate-400 rounded-b-xl flex flex-wrap items-end justify-center pb-1 gap-1 px-1">
-                                <div class="text-orange-300 font-bold w-full text-center text-xs leading-none mb-1">${scaleWeight}g</div>
-                            </div>
+                            <div class="absolute -left-6 top-2 w-16 h-20 border-x-2 border-b-2 border-slate-400 rounded-b-xl flex items-end justify-center pb-1"><div class="bg-indigo-600 w-12 h-12 text-white font-bold flex items-center justify-center rounded shadow-lg text-sm">750g</div></div>
+                            <div class="absolute -right-6 top-2 w-16 h-20 border-x-2 border-b-2 border-slate-400 rounded-b-xl flex flex-wrap items-end justify-center pb-1 gap-1 px-1"><div class="text-orange-300 font-bold w-full text-center text-xs leading-none mb-1">${scaleWeight}g</div></div>
                         </div>
                         <div class="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-b-[40px] border-b-slate-400 -mt-2 z-0"></div>
                     </div>
-
                     <div class="flex flex-wrap justify-center gap-4">
                         <button onclick="addWeight(250)" class="bg-slate-700 hover:bg-orange-600 border-b-4 border-slate-900 text-white font-bold py-3 px-6 rounded-lg transition-transform active:translate-y-1 active:border-b-0">+ 250g</button>
                         <button onclick="addWeight(100)" class="bg-slate-700 hover:bg-orange-600 border-b-4 border-slate-900 text-white font-bold py-3 px-6 rounded-lg transition-transform active:translate-y-1 active:border-b-0">+ 100g</button>
                         <button onclick="addWeight(50)" class="bg-slate-700 hover:bg-orange-600 border-b-4 border-slate-900 text-white font-bold py-3 px-6 rounded-lg transition-transform active:translate-y-1 active:border-b-0">+ 50g</button>
-                        <button onclick="scaleWeight = 0; renderRoom11()" class="text-slate-400 underline hover:text-white ml-2 flex items-center">Esvaziar</button>
+                        <button onclick="scaleWeight = 0; renderRoom11()" class="text-slate-400 underline hover:text-white ml-2">Esvaziar</button>
                     </div>
                 </div>
             `;
         }
         function addWeight(w) {
-            scaleWeight += w;
-            renderRoom11();
-            if(scaleWeight === 750) {
-                setTimeout(() => showModal("Equilíbrio Perfeito!", "Exato! As combinações de peso equilibraram a balança em 750g.", "⚖️", "Próxima Sala ➔"), 600);
-            } else if (scaleWeight > 750) {
-                setTimeout(() => { scaleWeight = 0; renderRoom11(); }, 1000);
-            }
+            scaleWeight += w; renderRoom11();
+            if(scaleWeight === 750) { setTimeout(() => showModal("Equilíbrio Perfeito!", "Exato! As combinações de peso equilibraram a balança em 750g.", "⚖️", "Próxima Sala ➔"), 600); }
+            else if (scaleWeight > 750) { setTimeout(() => { scaleWeight = 0; renderRoom11(); }, 1000); }
         }
 
         function renderRoom12() {
-            let dots = [
-                {x: 20, y: 60}, {x: 80, y: 25}, {x: 180, y: 25}, {x: 120, y: 60}, 
-                {x: 20, y: 160}, {x: 80, y: 125}, {x: 180, y: 125}, {x: 120, y: 160}
-            ];
+            let dots = [{x: 20, y: 60}, {x: 80, y: 25}, {x: 180, y: 25}, {x: 120, y: 60}, {x: 20, y: 160}, {x: 80, y: 125}, {x: 180, y: 125}, {x: 120, y: 160}];
             let svgContent = `
                 <polygon points="20,60 120,60 120,160 20,160" fill="#334155" stroke="#0f172a" stroke-width="2" />
                 <polygon points="120,60 180,25 180,125 120,160" fill="#1e293b" stroke="#0f172a" stroke-width="2" />
@@ -891,18 +791,12 @@
                 <line x1="80" y1="25" x2="80" y2="125" stroke="#0f172a" stroke-width="2" stroke-dasharray="4" />
                 <line x1="180" y1="125" x2="80" y2="125" stroke="#0f172a" stroke-width="2" stroke-dasharray="4" />
             `;
-            dots.forEach((d, i) => {
-                svgContent += `<circle cx="${d.x}" cy="${d.y}" r="12" fill="${cubeVertices[i] ? '#22d3ee' : '#cbd5e1'}" class="cursor-pointer transition-colors duration-300" onclick="toggleVertex(${i})" />`;
-            });
-
+            dots.forEach((d, i) => { svgContent += `<circle cx="${d.x}" cy="${d.y}" r="12" fill="${cubeVertices[i] ? '#22d3ee' : '#cbd5e1'}" class="cursor-pointer transition-colors duration-300" onclick="toggleVertex(${i})" />`; });
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-cyan-300 font-title mb-4 flex items-center justify-center gap-2"><span>🧊</span> O Artefato de Geometria</h2>
-                        <p class="text-lg text-slate-200">
-                            A chave está presa dentro do Cubo.<br>
-                            Ative todos os <span class="text-cyan-300 font-bold">VÉRTICES</span> (pontas) deste Sólido Geométrico clicando neles.
-                        </p>
+                        <p class="text-lg text-slate-200">Ative todos os <span class="text-cyan-300 font-bold">VÉRTICES</span> (pontas) deste Sólido Geométrico clicando neles.</p>
                     </div>
                     <div class="relative bg-slate-900 p-6 md:p-10 rounded-full border-4 border-slate-700 shadow-[0_0_50px_rgba(34,211,238,0.1)] mb-8 scale-90 md:scale-100">
                         <svg width="200" height="200" viewBox="0 0 200 200">${svgContent}</svg>
@@ -912,11 +806,8 @@
             `;
         }
         function toggleVertex(i) {
-            cubeVertices[i] = true;
-            renderRoom12();
-            if(cubeVertices.every(v => v)) {
-                setTimeout(() => showModal("Artefato Aberto!", "Incrível! O cubo possui exatamente 8 vértices.", "💎", "Próxima Sala ➔"), 500);
-            }
+            cubeVertices[i] = true; renderRoom12();
+            if(cubeVertices.every(v => v)) { setTimeout(() => showModal("Artefato Aberto!", "Incrível! O cubo possui exatamente 8 vértices.", "💎", "Próxima Sala ➔"), 500); }
         }
 
         function renderRoom13() {
@@ -924,40 +815,27 @@
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-lime-400 font-title mb-4 flex items-center justify-center gap-2"><span>🌉</span> A Ponte de Pedras</h2>
-                        <p class="text-lg text-slate-200">
-                            Qual é o próximo número do caminho seguro?<br>
-                            Descubra a lógica da sequência:
-                        </p>
+                        <p class="text-lg text-slate-200">Descubra a lógica da sequência (O dobro mais um):</p>
                     </div>
                     <div class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8 md:mb-12 text-2xl md:text-4xl font-title text-slate-300">
-                        <div class="bg-slate-700 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">2</div>
-                        <span class="mt-2 md:mt-4">➔</span>
-                        <div class="bg-slate-700 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">5</div>
-                        <span class="mt-2 md:mt-4">➔</span>
-                        <div class="bg-slate-700 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">11</div>
-                        <span class="mt-2 md:mt-4">➔</span>
-                        <div class="bg-slate-700 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">23</div>
-                        <span class="mt-2 md:mt-4">➔</span>
+                        <div class="bg-slate-700 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">2</div><span class="mt-2 md:mt-4">➔</span>
+                        <div class="bg-slate-700 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">5</div><span class="mt-2 md:mt-4">➔</span>
+                        <div class="bg-slate-700 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">11</div><span class="mt-2 md:mt-4">➔</span>
+                        <div class="bg-slate-700 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg">23</div><span class="mt-2 md:mt-4">➔</span>
                         <div class="bg-slate-800 border-2 border-lime-500 text-lime-400 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-lg shadow-[0_0_15px_rgba(132,204,22,0.3)]">?</div>
                     </div>
-                    <p class="text-slate-400 mb-4">Escolha a próxima pedra:</p>
                     <div class="flex gap-4 md:gap-6">
                         <button onclick="checkSeq(46)" class="bg-slate-600 hover:bg-lime-600 border-b-4 border-slate-800 hover:border-lime-800 text-white font-title text-xl md:text-2xl py-3 px-6 md:py-4 md:px-8 rounded-xl transition-all">46</button>
                         <button onclick="checkSeq(47)" class="bg-slate-600 hover:bg-lime-600 border-b-4 border-slate-800 hover:border-lime-800 text-white font-title text-xl md:text-2xl py-3 px-6 md:py-4 md:px-8 rounded-xl transition-all">47</button>
                         <button onclick="checkSeq(50)" class="bg-slate-600 hover:bg-lime-600 border-b-4 border-slate-800 hover:border-lime-800 text-white font-title text-xl md:text-2xl py-3 px-6 md:py-4 md:px-8 rounded-xl transition-all">50</button>
                     </div>
-                    <div id="room13-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity text-center">Pedra errada! Dica: Cada número é O DOBRO MAIS UM do anterior.</div>
+                    <div id="room13-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity text-center">Pedra errada! Tente novamente.</div>
                 </div>
             `;
         }
         function checkSeq(val) {
-            if(val === 47) {
-                showModal("Caminho Seguro!", "Genial! (23 x 2) + 1 = 47. Você descobriu um padrão complexo.", "🛤️", "Próxima Sala ➔");
-            } else {
-                const err = document.getElementById('room13-error');
-                err.classList.remove('opacity-0');
-                setTimeout(() => err.classList.add('opacity-0'), 4000);
-            }
+            if(val === 47) { showModal("Caminho Seguro!", "Genial! (23 x 2) + 1 = 47.", "🛤️", "Próxima Sala ➔"); }
+            else { document.getElementById('room13-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room13-error').classList.add('opacity-0'), 4000); }
         }
 
         function renderRoom14() {
@@ -968,7 +846,6 @@
                 '<polygon points="25,5 48,20 38,45 12,45 2,20" fill="#facc15" />',
                 '<polygon points="25,2 45,12 45,38 25,48 5,38 5,12" fill="#facc15" />'
             ];
-
             for(let i=0; i<4; i++) {
                 dialsHTML += `
                     <div class="flex flex-col items-center bg-slate-800/80 p-4 rounded-2xl border-4 border-slate-600 shadow-inner w-20 md:w-24">
@@ -979,29 +856,19 @@
                     </div>
                 `;
             }
-
             container.innerHTML = `
                 <div class="w-full max-w-4xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-white font-title mb-4 flex items-center justify-center gap-2"><span>🛡️</span> Os Guardiões Poligonais</h2>
-                        <p class="text-lg text-slate-200 font-bold">
-                            "A senha secreta corresponde à quantidade de lados de cada guardião geométrico."
-                        </p>
+                        <p class="text-lg text-slate-200 font-bold">"A senha secreta corresponde à quantidade de lados de cada guardião."</p>
                     </div>
-                    <div class="flex flex-wrap justify-center gap-3 md:gap-8 p-6 md:p-10 bg-slate-900 rounded-3xl shadow-2xl border-4 border-slate-700">
-                        ${dialsHTML}
-                    </div>
+                    <div class="flex flex-wrap justify-center gap-3 md:gap-8 p-6 md:p-10 bg-slate-900 rounded-3xl shadow-2xl border-4 border-slate-700">${dialsHTML}</div>
                 </div>
             `;
         }
         function changeDoor(index, delta) {
-            doorDials[index] += delta;
-            if(doorDials[index] > 9) doorDials[index] = 0;
-            if(doorDials[index] < 0) doorDials[index] = 9;
-            renderRoom14();
-            if (doorDials.every((val, i) => val === correctDoorDials[i])) {
-                setTimeout(() => showModal("Guardiões Derrotados!", "Você decifrou a lógica geométrica e passou pelos guardiões.", "🛡️", "Avançar ➔"), 600);
-            }
+            doorDials[index] += delta; if(doorDials[index] > 9) doorDials[index] = 0; if(doorDials[index] < 0) doorDials[index] = 9; renderRoom14();
+            if (doorDials.every((val, i) => val === correctDoorDials[i])) { setTimeout(() => showModal("Guardiões Derrotados!", "Você decifrou a lógica geométrica.", "🛡️", "Avançar ➔"), 600); }
         }
 
         function renderRoom15() {
@@ -1015,47 +882,31 @@
                 }
             }
             grid += `<div></div>`;
-            for(let x=1; x<=5; x++) {
-                grid += `<div class="flex items-center justify-center text-indigo-400 font-bold mt-2">${x}</div>`;
-            }
-
+            for(let x=1; x<=5; x++) { grid += `<div class="flex items-center justify-center text-indigo-400 font-bold mt-2">${x}</div>`; }
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-6 w-full shadow-xl relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-indigo-600"></div>
                         <h2 class="text-3xl text-blue-300 font-title mb-4 flex items-center justify-center gap-2"><span>🗺️</span> O Mapa Estelar</h2>
-                        <p class="text-lg md:text-xl text-slate-200">
-                            A chave dourada está camuflada na coordenada exata.<br>
-                            Encontre e clique na posição onde <span class="text-yellow-400 font-bold">X (horizontal) = 4</span> e <span class="text-yellow-400 font-bold">Y (vertical) = 2</span>.
-                        </p>
+                        <p class="text-lg md:text-xl text-slate-200">Encontre a posição onde <span class="text-yellow-400 font-bold">X (horizontal) = 4</span> e <span class="text-yellow-400 font-bold">Y (vertical) = 2</span>.</p>
                     </div>
                     <div class="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr] gap-1 md:gap-2 bg-slate-900 p-4 md:p-8 rounded-2xl border-4 border-slate-700 w-full max-w-md mx-auto aspect-square text-slate-600 shadow-2xl relative">
                         <div class="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 text-indigo-400 font-bold uppercase tracking-widest text-sm">Eixo Y</div>
                         ${grid}
                         <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-indigo-400 font-bold uppercase tracking-widest text-sm">Eixo X</div>
                     </div>
-                    <div id="room15-error" class="h-8 mt-10 text-red-400 font-bold opacity-0 transition-opacity">Você errou o alvo! Tente novamente.</div>
+                    <div id="room15-error" class="h-8 mt-10 text-red-400 font-bold opacity-0 transition-opacity">Você errou o alvo!</div>
                 </div>
             `;
         }
-
         function checkCoord(x, y) {
             if (x === 4 && y === 2) {
-                document.getElementById(`coord-${x}-${y}`).innerHTML = "⭐";
-                document.getElementById(`coord-${x}-${y}`).classList.add("bg-yellow-500/50");
-                setTimeout(() => showModal("Estrela Encontrada!", "Perfeito! Você entende muito bem como ler um plano cartesiano localizando X e Y.", "🗺️", "Próxima Sala ➔"), 500);
+                document.getElementById(`coord-${x}-${y}`).innerHTML = "⭐"; document.getElementById(`coord-${x}-${y}`).classList.add("bg-yellow-500/50");
+                setTimeout(() => showModal("Estrela Encontrada!", "Perfeito! Leu o plano cartesiano corretamente.", "🗺️", "Próxima Sala ➔"), 500);
             } else {
-                document.getElementById(`coord-${x}-${y}`).innerHTML = "❌";
-                document.getElementById(`coord-${x}-${y}`).classList.add("bg-red-500/30");
-                const err = document.getElementById('room15-error');
-                err.innerText = `Você clicou em (X: ${x}, Y: ${y}). A dica pede (X: 4, Y: 2)!`;
-                err.classList.remove('opacity-0');
-                
-                setTimeout(() => {
-                    document.getElementById(`coord-${x}-${y}`).innerHTML = `<span class="opacity-0 hover:opacity-100 text-indigo-300 text-[10px] md:text-xs font-bold bg-slate-900/80 px-1 rounded">(${x},${y})</span>`;
-                    document.getElementById(`coord-${x}-${y}`).classList.remove("bg-red-500/30");
-                    err.classList.add('opacity-0');
-                }, 3000);
+                document.getElementById(`coord-${x}-${y}`).innerHTML = "❌"; document.getElementById(`coord-${x}-${y}`).classList.add("bg-red-500/30");
+                const err = document.getElementById('room15-error'); err.innerText = `Você clicou em (X: ${x}, Y: ${y}). A dica pede (X: 4, Y: 2)!`; err.classList.remove('opacity-0');
+                setTimeout(() => { document.getElementById(`coord-${x}-${y}`).innerHTML = `<span class="opacity-0 hover:opacity-100 text-indigo-300 text-[10px] md:text-xs font-bold bg-slate-900/80 px-1 rounded">(${x},${y})</span>`; document.getElementById(`coord-${x}-${y}`).classList.remove("bg-red-500/30"); err.classList.add('opacity-0'); }, 3000);
             }
         }
 
@@ -1063,191 +914,89 @@
             let multiplesBoard = [14, 18, 21, 27, 28, 34, 35, 42, 45, 49, 56, 60];
             let btns = multiplesBoard.map((val, i) => `
                 <button onclick="toggleMultiple(${i})" class="w-16 h-16 md:w-20 md:h-20 text-2xl md:text-3xl font-title rounded-2xl border-b-4 transition-all duration-200 active:translate-y-1 active:border-b-0 
-                ${multiplesState[i] ? 'bg-indigo-600 border-indigo-900 text-white shadow-[0_0_20px_rgba(79,70,229,0.8)]' : 'bg-slate-700 border-slate-900 text-slate-300 hover:bg-slate-600'}">
-                    ${val}
-                </button>
+                ${multiplesState[i] ? 'bg-indigo-600 border-indigo-900 text-white shadow-[0_0_20px_rgba(79,70,229,0.8)]' : 'bg-slate-700 border-slate-900 text-slate-300 hover:bg-slate-600'}">${val}</button>
             `).join('');
-
             container.innerHTML = `
                 <div class="w-full max-w-4xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-fuchsia-400 font-title mb-4 flex items-center justify-center gap-2"><span>🔒</span> O Painel de Segurança</h2>
-                        <p class="text-lg md:text-xl text-slate-200">
-                            "Para destrancar essa porta, ative TODOS os botões que são <span class="text-yellow-400 uppercase border-b border-yellow-400">Múltiplos de 7</span>."
-                        </p>
+                        <p class="text-lg md:text-xl text-slate-200">Ative TODOS os botões que são <span class="text-yellow-400 uppercase border-b border-yellow-400">Múltiplos de 7</span>.</p>
                     </div>
-                    <div class="grid grid-cols-4 gap-3 md:gap-6 justify-items-center mb-8 bg-slate-900/50 p-6 rounded-2xl border-4 border-slate-700">
-                        ${btns}
-                    </div>
-                    <button onclick="checkMultiples()" class="bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">
-                        Testar Fechadura
-                    </button>
-                    <div id="room16-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Acesso negado! Você esqueceu algum ou clicou em números errados.</div>
+                    <div class="grid grid-cols-4 gap-3 md:gap-6 justify-items-center mb-8 bg-slate-900/50 p-6 rounded-2xl border-4 border-slate-700">${btns}</div>
+                    <button onclick="checkMultiples()" class="bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Testar Fechadura</button>
+                    <div id="room16-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Acesso negado! Tem erro nos múltiplos.</div>
                 </div>
             `;
         }
-
-        function toggleMultiple(i) {
-            multiplesState[i] = !multiplesState[i];
-            renderRoom16();
-        }
-
+        function toggleMultiple(i) { multiplesState[i] = !multiplesState[i]; renderRoom16(); }
         function checkMultiples() {
             const target = [true, false, true, false, true, false, true, true, false, true, true, false]; 
-            const isCorrect = multiplesState.every((val, i) => val === target[i]);
-            
-            if(isCorrect) {
-                showModal("Painel Desbloqueado!", "Fantástico! Você encontrou todos os múltiplos exatos de 7 (A tabuada do 7!).", "🔐", "Avançar ➔");
-            } else {
-                const err = document.getElementById('room16-error');
-                err.classList.remove('opacity-0');
-                setTimeout(() => err.classList.add('opacity-0'), 3500);
-            }
+            if(multiplesState.every((val, i) => val === target[i])) { showModal("Painel Desbloqueado!", "Fantástico! Você encontrou os múltiplos exatos de 7.", "🔐", "Avançar ➔"); }
+            else { document.getElementById('room16-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room16-error').classList.add('opacity-0'), 3500); }
         }
 
-        // ======================= SALAS 17 a 20 (NOVAS) ======================= //
-
-        // STAGE 17: LINHA DE MEDIDAS (Conversão e Ordem)
         function renderRoom17() {
-            // Render Slots
             let slotsHTML = placedMeasures.map((measure, i) => {
-                if (measure) {
-                    return `
-                        <div onclick="clickSlot(${i})" class="w-full h-16 md:h-20 bg-sky-600 border-2 border-sky-400 rounded-xl flex items-center justify-center font-bold text-white text-lg md:text-xl cursor-pointer shadow-lg transform transition hover:scale-105">
-                            ${measure.text}
-                        </div>
-                    `;
-                } else {
-                    return `
-                        <div onclick="clickSlot(${i})" class="w-full h-16 md:h-20 bg-slate-800/50 border-2 border-dashed border-slate-500 rounded-xl flex items-center justify-center font-bold text-slate-500 text-sm md:text-base cursor-pointer hover:bg-slate-700/50 transition">
-                            Vazio
-                        </div>
-                    `;
-                }
+                if (measure) { return `<div onclick="clickSlot(${i})" class="w-full h-16 md:h-20 bg-sky-600 border-2 border-sky-400 rounded-xl flex items-center justify-center font-bold text-white text-lg md:text-xl cursor-pointer shadow-lg transform transition hover:scale-105">${measure.text}</div>`; }
+                else { return `<div onclick="clickSlot(${i})" class="w-full h-16 md:h-20 bg-slate-800/50 border-2 border-dashed border-slate-500 rounded-xl flex items-center justify-center font-bold text-slate-500 text-sm md:text-base cursor-pointer hover:bg-slate-700/50 transition">Vazio</div>`; }
             }).join('');
-
-            // Render Pool
             let poolHTML = measuresPool.map((measure, i) => {
                 let isSelected = selectedMeasure === measure.id;
-                return `
-                    <div onclick="clickPool(${measure.id})" class="w-24 md:w-32 h-16 md:h-20 flex items-center justify-center font-bold text-lg md:text-xl rounded-xl cursor-pointer transition-all transform 
-                        ${isSelected ? 'bg-yellow-400 text-slate-900 scale-110 shadow-[0_0_15px_rgba(250,204,21,0.8)] border-2 border-white' : 'bg-slate-700 text-slate-200 border-b-4 border-slate-900 hover:bg-slate-600'}">
-                        ${measure.text}
-                    </div>
-                `;
+                return `<div onclick="clickPool(${measure.id})" class="w-24 md:w-32 h-16 md:h-20 flex items-center justify-center font-bold text-lg md:text-xl rounded-xl cursor-pointer transition-all transform ${isSelected ? 'bg-yellow-400 text-slate-900 scale-110 shadow-[0_0_15px_rgba(250,204,21,0.8)] border-2 border-white' : 'bg-slate-700 text-slate-200 border-b-4 border-slate-900 hover:bg-slate-600'}">${measure.text}</div>`;
             }).join('');
-
             container.innerHTML = `
                 <div class="w-full max-w-4xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-sky-400 font-title mb-4 flex items-center justify-center gap-2"><span>📏</span> A Linha de Medidas</h2>
-                        <p class="text-lg text-slate-200">
-                            A ponte mágica só se forma se as tábuas forem posicionadas em <span class="text-yellow-400 font-bold">ordem crescente</span> (da MENOR para a MAIOR medida).<br>
-                            <span class="text-sm text-sky-300 mt-2 block">Dica: Converta tudo para metros mentalmente! (Clique em uma peça embaixo e depois no espaço vazio acima para movê-la)</span>
-                        </p>
+                        <p class="text-lg text-slate-200">Posicione as tábuas em <span class="text-yellow-400 font-bold">ordem crescente</span> (da MENOR para a MAIOR medida).<br><span class="text-sm text-sky-300 mt-2 block">Dica: Converta tudo para metros mentalmente! (Clique em uma peça embaixo e depois no espaço vazio acima)</span></p>
                     </div>
-
                     <div class="w-full max-w-2xl bg-slate-900 p-6 rounded-3xl border-4 border-slate-700 shadow-2xl mb-8 relative">
                         <div class="absolute w-full h-2 bg-slate-700 top-1/2 left-0 -translate-y-1/2 -z-10"></div>
-                        <div class="grid grid-cols-4 gap-2 md:gap-4 z-10">
-                            ${slotsHTML}
-                        </div>
-                        <div class="flex justify-between text-slate-500 font-bold text-sm mt-4 uppercase">
-                            <span>Menor</span>
-                            <span>Maior</span>
-                        </div>
+                        <div class="grid grid-cols-4 gap-2 md:gap-4 z-10">${slotsHTML}</div>
+                        <div class="flex justify-between text-slate-500 font-bold text-sm mt-4 uppercase"><span>Menor</span><span>Maior</span></div>
                     </div>
-
-                    <div class="flex flex-wrap justify-center gap-4 min-h-[80px]">
-                        ${poolHTML}
-                    </div>
-
+                    <div class="flex flex-wrap justify-center gap-4 min-h-[80px]">${poolHTML}</div>
                     <button onclick="checkRoom17()" class="mt-8 bg-sky-600 hover:bg-sky-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Construir Ponte</button>
                     <div id="room17-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">A ordem está incorreta ou faltam peças. Verifique suas conversões!</div>
                 </div>
             `;
         }
-
-        function clickPool(id) {
-            if (selectedMeasure === id) selectedMeasure = null; // deselect
-            else selectedMeasure = id;
-            renderRoom17();
-        }
-
+        function clickPool(id) { if (selectedMeasure === id) selectedMeasure = null; else selectedMeasure = id; renderRoom17(); }
         function clickSlot(index) {
             if (selectedMeasure !== null) {
-                // Find in pool
                 let poolIdx = measuresPool.findIndex(m => m.id === selectedMeasure);
                 if (poolIdx > -1) {
-                    // Put existing back to pool if slot is occupied
-                    if (placedMeasures[index] !== null) {
-                        measuresPool.push(placedMeasures[index]);
-                    }
-                    placedMeasures[index] = measuresPool[poolIdx];
-                    measuresPool.splice(poolIdx, 1);
-                    selectedMeasure = null;
+                    if (placedMeasures[index] !== null) { measuresPool.push(placedMeasures[index]); }
+                    placedMeasures[index] = measuresPool[poolIdx]; measuresPool.splice(poolIdx, 1); selectedMeasure = null;
                 }
-            } else if (placedMeasures[index] !== null) {
-                // Clicked an occupied slot without having something selected -> Return to pool
-                measuresPool.push(placedMeasures[index]);
-                placedMeasures[index] = null;
-            }
+            } else if (placedMeasures[index] !== null) { measuresPool.push(placedMeasures[index]); placedMeasures[index] = null; }
             renderRoom17();
         }
-
         function checkRoom17() {
-            // Check if all slots are filled
-            if (placedMeasures.some(m => m === null)) {
-                showRoom17Error();
-                return;
-            }
-            
-            // Check order (should be strictly increasing values: 1.5, 2, 2.5, 500)
+            if (placedMeasures.some(m => m === null)) { showRoom17Error(); return; }
             let isCorrect = true;
-            for(let i=0; i<placedMeasures.length - 1; i++) {
-                if(placedMeasures[i].val > placedMeasures[i+1].val) {
-                    isCorrect = false; break;
-                }
-            }
-
-            if(isCorrect) {
-                showModal("Ponte Construída!", "Perfeito! 150 cm (1,5m) < 2m < 2500 mm (2,5m) < 0,5 km (500m).", "🌉", "Avançar ➔");
-            } else {
-                showRoom17Error();
-            }
+            for(let i=0; i<placedMeasures.length - 1; i++) { if(placedMeasures[i].val > placedMeasures[i+1].val) { isCorrect = false; break; } }
+            if(isCorrect) { showModal("Ponte Construída!", "Perfeito! 150 cm (1,5m) < 2m < 2500 mm (2,5m) < 0,5 km (500m).", "🌉", "Avançar ➔"); } else { showRoom17Error(); }
         }
-        function showRoom17Error() {
-            const err = document.getElementById('room17-error');
-            err.classList.remove('opacity-0');
-            setTimeout(() => err.classList.add('opacity-0'), 3500);
-        }
+        function showRoom17Error() { const err = document.getElementById('room17-error'); err.classList.remove('opacity-0'); setTimeout(() => err.classList.add('opacity-0'), 3500); }
 
-        // STAGE 18: GRÁFICO ESTATÍSTICO
         function renderRoom18() {
-            // Target: Maçãs 30, Bananas 10, Laranjas 40
-            const labels = ['Maçãs', 'Bananas', 'Laranjas'];
-            const colors = ['bg-red-500', 'bg-yellow-400', 'bg-orange-500'];
-
+            const labels = ['Maçãs', 'Bananas', 'Laranjas']; const colors = ['bg-red-500', 'bg-yellow-400', 'bg-orange-500'];
             let barsHTML = chartBars.map((h, i) => `
                 <div class="flex flex-col items-center">
                     <button onclick="changeBar(${i}, 10)" class="text-slate-400 hover:text-white mb-2 text-2xl active:scale-90">▲</button>
                     <div class="h-40 md:h-48 w-12 md:w-16 bg-slate-800 rounded-t-lg relative flex items-end justify-center border-b-2 border-slate-600">
-                        <div class="w-full rounded-t-sm ${colors[i]} bar-transition flex items-start justify-center pt-2 font-bold text-slate-900" style="height: ${(h/50)*100}%;">
-                            ${h > 0 ? h : ''}
-                        </div>
+                        <div class="w-full rounded-t-sm ${colors[i]} bar-transition flex items-start justify-center pt-2 font-bold text-slate-900" style="height: ${(h/50)*100}%;">${h > 0 ? h : ''}</div>
                     </div>
                     <button onclick="changeBar(${i}, -10)" class="text-slate-400 hover:text-white mt-2 text-2xl active:scale-90">▼</button>
                     <span class="text-slate-300 font-bold text-sm md:text-base mt-1">${labels[i]}</span>
                 </div>
             `).join('');
-
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
                         <h2 class="text-3xl text-yellow-300 font-title mb-4 flex items-center justify-center gap-2"><span>📊</span> O Arquivo Secreto</h2>
-                        <p class="text-lg text-slate-200">
-                            Ajuste as colunas do gráfico para refletirem exatamente os dados da tabela de colheita.
-                        </p>
+                        <p class="text-lg text-slate-200">Ajuste as colunas do gráfico para refletirem exatamente os dados da tabela.</p>
                         <div class="bg-slate-900 border-2 border-slate-700 rounded-xl p-4 mt-4 mx-auto max-w-sm">
                             <table class="w-full text-left text-slate-200">
                                 <tr><th class="py-1">Fruta</th><th class="py-1">Quantidade</th></tr>
@@ -1257,76 +1006,40 @@
                             </table>
                         </div>
                     </div>
-
-                    <div class="flex gap-4 md:gap-12 bg-slate-900 p-6 md:p-10 rounded-3xl shadow-2xl border-4 border-slate-700">
-                        ${barsHTML}
-                    </div>
-
+                    <div class="flex gap-4 md:gap-12 bg-slate-900 p-6 md:p-10 rounded-3xl shadow-2xl border-4 border-slate-700">${barsHTML}</div>
                     <button onclick="checkRoom18()" class="mt-8 bg-yellow-600 hover:bg-yellow-500 text-slate-900 font-title text-xl py-3 px-10 rounded-full shadow-lg">Analisar Gráfico</button>
                     <div id="room18-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Os dados visuais não batem com a tabela!</div>
                 </div>
             `;
         }
-
-        function changeBar(index, delta) {
-            chartBars[index] += delta;
-            if(chartBars[index] < 0) chartBars[index] = 0;
-            if(chartBars[index] > 50) chartBars[index] = 50;
-            renderRoom18();
-        }
-
+        function changeBar(index, delta) { chartBars[index] += delta; if(chartBars[index] < 0) chartBars[index] = 0; if(chartBars[index] > 50) chartBars[index] = 50; renderRoom18(); }
         function checkRoom18() {
-            if(chartBars[0] === 30 && chartBars[1] === 10 && chartBars[2] === 40) {
-                showModal("Dados Corretos!", "Excelente! Você interpretou a tabela e ajustou o gráfico de colunas perfeitamente.", "📈", "Próxima Sala ➔");
-            } else {
-                const err = document.getElementById('room18-error');
-                err.classList.remove('opacity-0');
-                setTimeout(() => err.classList.add('opacity-0'), 3000);
-            }
+            if(chartBars[0] === 30 && chartBars[1] === 10 && chartBars[2] === 40) { showModal("Dados Corretos!", "Excelente! Você ajustou o gráfico perfeitamente.", "📈", "Próxima Sala ➔"); }
+            else { document.getElementById('room18-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room18-error').classList.add('opacity-0'), 3000); }
         }
 
-        // STAGE 19: LÓGICA ESPACIAL (Mini Labirinto / Cadeado Direcional)
         function renderRoom19() {
             let cmdIcons = {'U':'⬆️', 'D':'⬇️', 'L':'⬅️', 'R':'➡️'};
             let screenHTML = padLockPath.map(c => `<span class="bg-slate-700 text-white px-2 py-1 rounded mx-1">${cmdIcons[c]}</span>`).join('');
             if(screenHTML === '') screenHTML = '<span class="text-slate-500">_ _ _ _</span>';
-
             container.innerHTML = `
                 <div class="w-full max-w-3xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-6 w-full shadow-xl">
                         <h2 class="text-3xl text-emerald-400 font-title mb-4 flex items-center justify-center gap-2"><span>🤖</span> O Cadeado Direcional</h2>
-                        <p class="text-lg text-slate-200">
-                            Programe a rota exata de 4 passos para o robô sair do início (A) e chegar na meta (B), desviando dos buracos (X).
-                        </p>
+                        <p class="text-lg text-slate-200">Programe a rota exata de 4 passos para o robô sair do início (A) e chegar na meta (B), desviando dos buracos (X).</p>
                     </div>
-
                     <div class="flex flex-col md:flex-row gap-8 items-center w-full justify-center">
-                        <!-- Mapa -->
                         <div class="bg-slate-900 border-4 border-slate-700 p-4 rounded-2xl relative w-48 h-48 flex items-center justify-center text-2xl shadow-xl">
                             <div class="grid grid-cols-3 grid-rows-3 gap-2 w-full h-full text-center">
-                                <div class="bg-slate-800 rounded flex items-center justify-center border border-slate-600"></div>
-                                <div class="bg-slate-800 rounded flex items-center justify-center border border-slate-600"></div>
-                                <div class="bg-emerald-600/30 rounded flex items-center justify-center border-2 border-emerald-500 text-emerald-400 font-bold">B</div>
-                                
-                                <div class="bg-slate-800 rounded flex items-center justify-center border border-slate-600"></div>
-                                <div class="bg-red-900/50 rounded flex items-center justify-center border border-red-500 text-sm">X</div>
-                                <div class="bg-slate-800 rounded flex items-center justify-center border border-slate-600"></div>
-                                
-                                <div class="bg-indigo-600/30 rounded flex items-center justify-center border-2 border-indigo-500 text-indigo-400 font-bold">A</div>
-                                <div class="bg-red-900/50 rounded flex items-center justify-center border border-red-500 text-sm">X</div>
-                                <div class="bg-slate-800 rounded flex items-center justify-center border border-slate-600"></div>
+                                <div class="bg-slate-800 rounded border border-slate-600"></div><div class="bg-slate-800 rounded border border-slate-600"></div><div class="bg-emerald-600/30 rounded border-2 border-emerald-500 text-emerald-400 font-bold flex items-center justify-center">B</div>
+                                <div class="bg-slate-800 rounded border border-slate-600"></div><div class="bg-red-900/50 rounded border border-red-500 text-sm flex items-center justify-center">X</div><div class="bg-slate-800 rounded border border-slate-600"></div>
+                                <div class="bg-indigo-600/30 rounded border-2 border-indigo-500 text-indigo-400 font-bold flex items-center justify-center">A</div><div class="bg-red-900/50 rounded border border-red-500 text-sm flex items-center justify-center">X</div><div class="bg-slate-800 rounded border border-slate-600"></div>
                             </div>
                         </div>
-
-                        <!-- Controle -->
                         <div class="bg-slate-900 border-4 border-slate-700 p-6 rounded-3xl shadow-2xl flex flex-col items-center">
-                            <div class="h-12 w-full bg-slate-950 border-2 border-slate-800 rounded-lg mb-6 flex items-center justify-center text-xl overflow-hidden px-2 whitespace-nowrap min-w-[160px]">
-                                ${screenHTML}
-                            </div>
+                            <div class="h-12 w-full bg-slate-950 border-2 border-slate-800 rounded-lg mb-6 flex items-center justify-center text-xl overflow-hidden px-2 whitespace-nowrap min-w-[160px]">${screenHTML}</div>
                             <div class="grid grid-cols-3 gap-2 mb-4">
-                                <div></div>
-                                <button onclick="addCmd('U')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg active:scale-95 shadow-md">⬆️</button>
-                                <div></div>
+                                <div></div><button onclick="addCmd('U')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg active:scale-95 shadow-md">⬆️</button><div></div>
                                 <button onclick="addCmd('L')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg active:scale-95 shadow-md">⬅️</button>
                                 <button onclick="addCmd('D')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg active:scale-95 shadow-md">⬇️</button>
                                 <button onclick="addCmd('R')" class="bg-slate-700 hover:bg-slate-500 text-2xl w-12 h-12 rounded-lg active:scale-95 shadow-md">➡️</button>
@@ -1341,27 +1054,12 @@
                 </div>
             `;
         }
-        function addCmd(c) {
-            if(padLockPath.length < 4) {
-                padLockPath.push(c);
-                renderRoom19();
-            }
-        }
+        function addCmd(c) { if(padLockPath.length < 4) { padLockPath.push(c); renderRoom19(); } }
         function checkRoom19() {
-            // Valid path from bottom-left (0,0) to top-right (2,2) with traps at (1,0) and (1,1).
-            // Safest 4-step path: UP, UP, RIGHT, RIGHT -> 'U','U','R','R'
-            const valid = padLockPath.join('') === 'UURR';
-            if(valid) {
-                showModal("Rota Segura!", "Lógica perfeita! Você evitou os obstáculos e chegou ao destino guiando os passos.", "🤖", "Último Desafio ➔");
-            } else {
-                padLockPath = [];
-                const err = document.getElementById('room19-error');
-                err.classList.remove('opacity-0');
-                setTimeout(() => { err.classList.add('opacity-0'); renderRoom19(); }, 3000);
-            }
+            if(padLockPath.join('') === 'UURR') { showModal("Rota Segura!", "Lógica perfeita! Você evitou os obstáculos.", "🤖", "Próxima Sala ➔"); }
+            else { padLockPath = []; document.getElementById('room19-error').classList.remove('opacity-0'); setTimeout(() => { document.getElementById('room19-error').classList.add('opacity-0'); renderRoom19(); }, 3000); }
         }
 
-        // STAGE 20: O GRANDE ENIGMA FINAL (Criptograma / Expressão Numérica)
         function renderRoom20() {
             let dialsHTML = '';
             for(let i=0; i<2; i++) {
@@ -1375,95 +1073,369 @@
                     </div>
                 `;
             }
-
             container.innerHTML = `
-                <div class="w-full max-w-4xl flex flex-col items-center animate-float" style="animation-duration: 5s;">
+                <div class="w-full max-w-4xl flex flex-col items-center">
                     <div class="bg-gradient-to-b from-slate-900 to-red-950 p-6 md:p-10 rounded-[2rem] border-8 border-red-900 shadow-[0_0_80px_rgba(153,27,27,0.5)] text-center w-full relative">
-                        <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 text-5xl md:text-6xl">🔥</div>
-                        <h2 class="text-3xl md:text-4xl text-white font-title mb-4 mt-6 drop-shadow-md">O Grande Enigma Final</h2>
-                        <p class="text-lg md:text-xl text-red-200 mb-6 font-bold">
-                            Descubra o valor final. Lembre-se da regra de ouro: multiplicações primeiro!
-                        </p>
-                        
+                        <h2 class="text-3xl md:text-4xl text-white font-title mb-4 mt-6 drop-shadow-md">O Cofre Quente</h2>
+                        <p class="text-lg md:text-xl text-red-200 mb-6 font-bold">Descubra o valor final. Lembre-se da regra de ouro: multiplicações primeiro!</p>
                         <div class="bg-slate-900/80 p-6 rounded-2xl border-2 border-red-800/50 inline-block text-2xl md:text-3xl font-bold text-slate-200 mb-8 w-full max-w-md">
                             <div class="mb-3">🍎 + 🍎 + 🍎 = 30</div>
                             <div class="mb-3">🍎 + 🍌 + 🍌 = 18</div>
                             <div class="mb-3">🍌 - 🍒 = 2</div>
-                            <div class="mt-6 pt-4 border-t-2 border-slate-700 text-yellow-400 text-3xl md:text-4xl">
-                                🍒 + 🍎 × 🍌 = ?
-                            </div>
+                            <div class="mt-6 pt-4 border-t-2 border-slate-700 text-yellow-400 text-3xl md:text-4xl">🍒 + 🍎 × 🍌 = ?</div>
                         </div>
-
-                        <div class="flex justify-center gap-4 md:gap-8 bg-slate-900/50 p-6 rounded-3xl mx-auto w-fit">
-                            ${dialsHTML}
-                        </div>
-                        <div id="room20-error" class="h-8 mt-6 text-red-400 font-bold text-lg opacity-0 transition-opacity">A senha mestra está incorreta! Revise seus cálculos.</div>
+                        <div class="flex justify-center gap-4 md:gap-8 bg-slate-900/50 p-6 rounded-3xl mx-auto w-fit">${dialsHTML}</div>
                     </div>
                 </div>
             `;
         }
-
         function changeBossDial(index, delta) {
-            bossDials[index] += delta;
-            if (bossDials[index] > 9) bossDials[index] = 0;
-            if (bossDials[index] < 0) bossDials[index] = 9;
-            renderRoom20();
-            
-            // Maca = 10. Banana = 4. Cereja = 2.
-            // 2 + 10 * 4 = 42. (Dials: [4, 2])
-            if (bossDials[0] === 4 && bossDials[1] === 2) {
-                setTimeout(() => nextStage(), 800); // direct to win
-            }
+            bossDials[index] += delta; if (bossDials[index] > 9) bossDials[index] = 0; if (bossDials[index] < 0) bossDials[index] = 9; renderRoom20();
+            if (bossDials[0] === 4 && bossDials[1] === 2) { setTimeout(() => showModal("Cofre Quente Aberto!", "Incrível! 2 + 10x4 = 42. Multiplica-se primeiro!", "🔥", "Avançar ➔"), 600); }
         }
 
+        // ======================= NOVAS SALAS (21 a 28) ======================= //
 
-        // ======================= WIN SCREEN (STAGE 21) ======================= //
+        // STAGE 21: Ângulos
+        function renderRoom21() {
+            container.innerHTML = `
+                <div class="w-full max-w-3xl flex flex-col items-center">
+                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
+                        <h2 class="text-3xl text-teal-400 font-title mb-4 flex items-center justify-center gap-2"><span>🧭</span> A Bússola Quebrada</h2>
+                        <p class="text-lg text-slate-200">Para a porta abrir, selecione a imagem que forma exatamente um <span class="text-yellow-400 font-bold">ÂNGULO RETO (90 graus)</span>.</p>
+                    </div>
+                    <div class="flex flex-col md:flex-row justify-center gap-6 md:gap-10 mb-8">
+                        <!-- Acute -->
+                        <div onclick="checkAngle('acute')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-teal-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
+                            <svg width="100" height="100" viewBox="0 0 100 100" class="group-hover:scale-110 transition">
+                                <line x1="20" y1="80" x2="80" y2="80" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+                                <line x1="20" y1="80" x2="50" y2="30" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+                                <path d="M 40 80 A 20 20 0 0 0 32 60" fill="none" stroke="#38bdf8" stroke-width="3"/>
+                            </svg>
+                            <span class="text-slate-400 mt-4 font-bold uppercase text-sm">Opção 1</span>
+                        </div>
+                        <!-- Right Angle -->
+                        <div onclick="checkAngle('right')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-teal-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
+                            <svg width="100" height="100" viewBox="0 0 100 100" class="group-hover:scale-110 transition">
+                                <line x1="20" y1="80" x2="80" y2="80" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+                                <line x1="20" y1="80" x2="20" y2="20" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+                                <rect x="20" y="60" width="20" height="20" fill="none" stroke="#38bdf8" stroke-width="3"/>
+                                <circle cx="30" cy="70" r="2" fill="#38bdf8" />
+                            </svg>
+                            <span class="text-slate-400 mt-4 font-bold uppercase text-sm">Opção 2</span>
+                        </div>
+                        <!-- Obtuse -->
+                        <div onclick="checkAngle('obtuse')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-teal-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
+                            <svg width="100" height="100" viewBox="0 0 100 100" class="group-hover:scale-110 transition">
+                                <line x1="40" y1="80" x2="90" y2="80" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+                                <line x1="40" y1="80" x2="10" y2="30" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+                                <path d="M 60 80 A 20 20 0 0 1 25 55" fill="none" stroke="#38bdf8" stroke-width="3"/>
+                            </svg>
+                            <span class="text-slate-400 mt-4 font-bold uppercase text-sm">Opção 3</span>
+                        </div>
+                    </div>
+                    <div id="room21-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Este ângulo não é reto! Lembre-se do canto de um quadrado.</div>
+                </div>
+            `;
+        }
+        function checkAngle(type) {
+            if(type === 'right') { showModal("Ângulo Certo!", "Muito bem! O Ângulo Reto mede exatamente 90 graus (como a quina de uma porta).", "📐", "Próxima Sala ➔"); }
+            else { document.getElementById('room21-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room21-error').classList.add('opacity-0'), 3000); }
+        }
+
+        // STAGE 22: Porcentagem
+        function renderRoom22() {
+            container.innerHTML = `
+                <div class="w-full max-w-3xl flex flex-col items-center">
+                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
+                        <h2 class="text-3xl text-green-400 font-title mb-4 flex items-center justify-center gap-2"><span>🔋</span> O Baú das Porcentagens</h2>
+                        <p class="text-lg text-slate-200">A bateria principal deve ser carregada até atingir exatamente <span class="text-green-400 font-bold">75%</span>.</p>
+                    </div>
+                    
+                    <div class="w-full max-w-sm h-16 md:h-20 bg-slate-900 border-4 border-slate-600 rounded-xl relative overflow-hidden mb-8 shadow-inner flex items-center p-1">
+                        <div class="h-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500 ease-out rounded" style="width: ${batteryLevel}%"></div>
+                        <div class="absolute inset-0 flex items-center justify-center font-bold text-xl drop-shadow-md z-10 ${batteryLevel > 40 ? 'text-slate-900' : 'text-slate-300'}">${batteryLevel}%</div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button onclick="addBattery(25)" class="bg-green-600 hover:bg-green-500 text-white font-title text-xl py-3 px-8 rounded-xl shadow-lg">+ 25%</button>
+                        <button onclick="batteryLevel = 0; renderRoom22()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-3 px-6 rounded-xl">Zerar</button>
+                    </div>
+                    <div id="room22-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity">Nível incorreto! O sistema recusa cargas diferentes de 75%.</div>
+                </div>
+            `;
+        }
+        function addBattery(val) {
+            batteryLevel += val; if(batteryLevel > 100) batteryLevel = 100; renderRoom22();
+            if(batteryLevel === 75) { setTimeout(() => showModal("Energizado!", "Excelente! 75% é o mesmo que 3 partes de 4 (3/4).", "⚡", "Próxima Sala ➔"), 600); }
+            else if(batteryLevel === 100) { document.getElementById('room22-error').classList.remove('opacity-0'); setTimeout(() => { batteryLevel = 0; renderRoom22(); }, 2000); }
+        }
+
+        // STAGE 23: Decimais
+        function renderRoom23() {
+            container.innerHTML = `
+                <div class="w-full max-w-3xl flex flex-col items-center">
+                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
+                        <h2 class="text-3xl text-orange-400 font-title mb-4 flex items-center justify-center gap-2"><span>🔢</span> O Trilho Decimal</h2>
+                        <p class="text-lg text-slate-200">Continue a sequência de números decimais (padrão de soma):<br><span class="text-2xl text-yellow-400 font-bold mt-2 block">0,3 ➔ 0,6 ➔ 0,9 ➔ ?</span></p>
+                    </div>
+                    <div class="flex items-center gap-4 bg-slate-900 p-8 rounded-3xl border-4 border-slate-700 shadow-2xl mb-8">
+                        <div class="flex flex-col items-center">
+                            <button onclick="decSeqWhole = (decSeqWhole+1)%10; renderRoom23()" class="text-3xl text-slate-400 hover:text-white p-2">▲</button>
+                            <div class="text-6xl font-title text-orange-400 w-20 text-center bg-slate-800 rounded-xl py-2">${decSeqWhole}</div>
+                            <button onclick="decSeqWhole = (decSeqWhole-1+10)%10; renderRoom23()" class="text-3xl text-slate-400 hover:text-white p-2">▼</button>
+                        </div>
+                        <div class="text-7xl font-title text-slate-500 pb-4">,</div>
+                        <div class="flex flex-col items-center">
+                            <button onclick="decSeqFrac = (decSeqFrac+1)%10; renderRoom23()" class="text-3xl text-slate-400 hover:text-white p-2">▲</button>
+                            <div class="text-6xl font-title text-orange-400 w-20 text-center bg-slate-800 rounded-xl py-2">${decSeqFrac}</div>
+                            <button onclick="decSeqFrac = (decSeqFrac-1+10)%10; renderRoom23()" class="text-3xl text-slate-400 hover:text-white p-2">▼</button>
+                        </div>
+                    </div>
+                    <button onclick="checkRoom23()" class="bg-orange-600 hover:bg-orange-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Confirmar</button>
+                    <div id="room23-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Sequência errada! 0,9 + 0,3 = ?</div>
+                </div>
+            `;
+        }
+        function checkRoom23() {
+            if(decSeqWhole === 1 && decSeqFrac === 2) { showModal("Perfeito!", "Muito bom! 0,9 mais 0,3 forma 1 inteiro e 2 décimos (1,2).", "✅", "Próxima Sala ➔"); }
+            else { document.getElementById('room23-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room23-error').classList.add('opacity-0'), 3000); }
+        }
+
+        // STAGE 24: Divisão
+        function renderRoom24() {
+            let chestsHTML = chestCoins.map((coins, i) => `
+                <div onclick="addCoinToChest(${i})" class="flex flex-col items-center bg-slate-800 p-4 rounded-xl border-2 border-slate-600 cursor-pointer hover:bg-slate-700 transition transform hover:scale-105 active:scale-95 shadow-lg">
+                    <span class="text-5xl mb-2">🧰</span>
+                    <span class="text-yellow-400 font-bold text-xl">${coins} moedas</span>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="w-full max-w-4xl flex flex-col items-center">
+                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
+                        <h2 class="text-3xl text-yellow-500 font-title mb-4 flex items-center justify-center gap-2"><span>🪙</span> A Máquina de Divisão</h2>
+                        <p class="text-lg text-slate-200">Você possui <span class="text-yellow-400 font-bold">${coinsToDistribute}</span> moedas na mão. <br>Distribua-as <span class="font-bold underline">igualmente</span> entre os 4 baús clicando neles.</p>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full mb-8">
+                        ${chestsHTML}
+                    </div>
+                    <div class="flex gap-4">
+                        <button onclick="checkRoom24()" class="bg-yellow-600 hover:bg-yellow-500 text-slate-900 font-title text-xl py-3 px-10 rounded-full shadow-lg">Verificar Baús</button>
+                        <button onclick="resetRoom24()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded-full">Recolher</button>
+                    </div>
+                    <div id="room24-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">A divisão não está igualitária ou ainda sobraram moedas.</div>
+                </div>
+            `;
+        }
+        function addCoinToChest(i) {
+            if(coinsToDistribute > 0) { chestCoins[i]++; coinsToDistribute--; renderRoom24(); }
+        }
+        function resetRoom24() { chestCoins = [0,0,0,0]; coinsToDistribute = 24; renderRoom24(); }
+        function checkRoom24() {
+            if(coinsToDistribute === 0 && chestCoins.every(c => c === 6)) { showModal("Divisão Exata!", "Excelente! 24 dividido por 4 é exatamente 6 para cada baú.", "🧮", "Avançar ➔"); }
+            else { document.getElementById('room24-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room24-error').classList.add('opacity-0'), 3000); }
+        }
+
+        // STAGE 25: Probabilidade
+        function renderRoom25() {
+            // Urn with visually distinct balls
+            let balls = '';
+            for(let i=0; i<8; i++) balls += `<circle cx="${30 + Math.random()*140}" cy="${150 - Math.random()*80}" r="12" fill="#ef4444" />`; // Red
+            for(let i=0; i<2; i++) balls += `<circle cx="${30 + Math.random()*140}" cy="${150 - Math.random()*80}" r="12" fill="#3b82f6" />`; // Blue
+            for(let i=0; i<1; i++) balls += `<circle cx="${30 + Math.random()*140}" cy="${150 - Math.random()*80}" r="12" fill="#eab308" />`; // Yellow
+
+            container.innerHTML = `
+                <div class="w-full max-w-3xl flex flex-col items-center">
+                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
+                        <h2 class="text-3xl text-pink-400 font-title mb-4 flex items-center justify-center gap-2"><span>🎲</span> A Urna do Destino</h2>
+                        <p class="text-lg text-slate-200">Se você colocar a mão na urna de olhos vendados, tirar qual cor é o evento <strong class="text-pink-400">MAIS PROVÁVEL</strong> de acontecer?</p>
+                    </div>
+                    
+                    <div class="relative w-48 h-56 mb-8">
+                        <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-2xl">
+                            <!-- Glass Jar -->
+                            <path d="M 40 20 L 160 20 L 180 180 Q 100 200 20 180 Z" fill="rgba(255,255,255,0.1)" stroke="#cbd5e1" stroke-width="4"/>
+                            ${balls}
+                            <!-- Shine -->
+                            <path d="M 50 30 L 70 30 L 80 170 L 60 170 Z" fill="rgba(255,255,255,0.15)"/>
+                        </svg>
+                    </div>
+
+                    <div class="flex gap-4 w-full justify-center">
+                        <button onclick="checkRoom25('red')" class="w-32 bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-xl shadow-lg border-b-4 border-red-800 active:translate-y-1 active:border-b-0">Vermelho</button>
+                        <button onclick="checkRoom25('blue')" class="w-32 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg border-b-4 border-blue-800 active:translate-y-1 active:border-b-0">Azul</button>
+                        <button onclick="checkRoom25('yellow')" class="w-32 bg-yellow-600 hover:bg-yellow-500 text-slate-900 font-bold py-4 rounded-xl shadow-lg border-b-4 border-yellow-800 active:translate-y-1 active:border-b-0">Amarelo</button>
+                    </div>
+                    <div id="room25-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity">Errado. Olhe com atenção para a quantidade de bolas de cada cor.</div>
+                </div>
+            `;
+        }
+        function checkRoom25(color) {
+            if(color === 'red') { showModal("Isso Mesmo!", "A cor vermelha possui muito mais bolas que as outras, logo é a mais provável de ser sorteada.", "🎯", "Próxima Sala ➔"); }
+            else { document.getElementById('room25-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room25-error').classList.add('opacity-0'), 3000); }
+        }
+
+        // STAGE 26: Frações Equivalentes
+        function renderRoom26() {
+            container.innerHTML = `
+                <div class="w-full max-w-3xl flex flex-col items-center">
+                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
+                        <h2 class="text-3xl text-indigo-400 font-title mb-4 flex items-center justify-center gap-2"><span>🧩</span> Os Espelhos Mágicos</h2>
+                        <p class="text-lg text-slate-200">Qual das imagens abaixo representa uma fração <span class="text-indigo-400 font-bold">EQUIVALENTE (igual)</span> a <strong class="text-2xl text-yellow-400 ml-2">1/2</strong> ?</p>
+                    </div>
+                    
+                    <div class="flex flex-col md:flex-row gap-6 md:gap-10">
+                        <div onclick="checkRoom26('3/4')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-indigo-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
+                            <div class="w-24 h-24 rounded-full border-4 border-slate-500 flex flex-wrap overflow-hidden mb-4 group-hover:scale-110 transition">
+                                <div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div>
+                                <div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div>
+                            </div>
+                            <span class="text-slate-300 font-bold text-xl">3/4</span>
+                        </div>
+                        <div onclick="checkRoom26('2/4')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-indigo-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
+                            <div class="w-24 h-24 rounded-full border-4 border-slate-500 flex flex-wrap overflow-hidden mb-4 group-hover:scale-110 transition">
+                                <div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div>
+                                <div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div>
+                            </div>
+                            <span class="text-slate-300 font-bold text-xl">2/4</span>
+                        </div>
+                        <div onclick="checkRoom26('1/4')" class="bg-slate-900 p-6 rounded-2xl border-4 border-slate-700 hover:border-indigo-400 cursor-pointer transition shadow-lg flex flex-col items-center group">
+                            <div class="w-24 h-24 rounded-full border-4 border-slate-500 flex flex-wrap overflow-hidden mb-4 group-hover:scale-110 transition">
+                                <div class="w-1/2 h-1/2 bg-indigo-500 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div>
+                                <div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div><div class="w-1/2 h-1/2 bg-slate-800 border border-slate-700"></div>
+                            </div>
+                            <span class="text-slate-300 font-bold text-xl">1/4</span>
+                        </div>
+                    </div>
+                    <div id="room26-error" class="h-8 mt-6 text-red-400 font-bold opacity-0 transition-opacity">A área pintada não representa metade do círculo inteiro.</div>
+                </div>
+            `;
+        }
+        function checkRoom26(frac) {
+            if(frac === '2/4') { showModal("Fração Correta!", "Genial! 2 fatias de 4 representam a mesma quantidade que 1 fatia de 2. (Equivalência)", "🍕", "Próxima Sala ➔"); }
+            else { document.getElementById('room26-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room26-error').classList.add('opacity-0'), 3000); }
+        }
+
+        // STAGE 27: Números Negativos
+        function renderRoom27() {
+            let fillHeight = ((tempValue + 10) / 20) * 100;
+            if (fillHeight > 100) fillHeight = 100; if (fillHeight < 0) fillHeight = 0;
+            
+            container.innerHTML = `
+                <div class="w-full max-w-3xl flex flex-col items-center">
+                    <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
+                        <h2 class="text-3xl text-cyan-200 font-title mb-4 flex items-center justify-center gap-2"><span>❄️</span> O Porão Congelado</h2>
+                        <p class="text-lg text-slate-200">A temperatura era de <strong class="text-yellow-400">3°C</strong>. Durante a noite, <strong class="text-cyan-300">caiu 5 graus</strong>.<br>Ajuste o termômetro para a nova temperatura exata.</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-10 bg-slate-900 p-8 rounded-3xl border-4 border-slate-700 shadow-2xl mb-8">
+                        <!-- Controls -->
+                        <div class="flex flex-col gap-4">
+                            <button onclick="changeTemp(1)" class="w-16 h-16 bg-red-600/80 hover:bg-red-500 text-white text-3xl font-bold rounded-full shadow-lg transition active:scale-90">+</button>
+                            <div class="text-4xl font-title text-slate-200 text-center w-16 py-2">${tempValue}°</div>
+                            <button onclick="changeTemp(-1)" class="w-16 h-16 bg-blue-600/80 hover:bg-blue-500 text-white text-3xl font-bold rounded-full shadow-lg transition active:scale-90">-</button>
+                        </div>
+
+                        <!-- Thermometer -->
+                        <div class="flex flex-col items-center relative">
+                            <div class="w-8 h-48 bg-slate-800 rounded-t-full border-4 border-b-0 border-slate-500 relative overflow-hidden flex flex-col justify-end p-1">
+                                <div class="w-full bg-gradient-to-t from-red-600 to-red-400 rounded-t transition-all duration-300" style="height: ${fillHeight}%;"></div>
+                            </div>
+                            <div class="w-16 h-16 bg-red-600 rounded-full border-4 border-slate-500 -mt-4 z-10 shadow-inner"></div>
+                            
+                            <!-- Scale Marks -->
+                            <div class="absolute left-full top-0 h-48 flex flex-col justify-between text-xs font-bold text-slate-400 ml-2 py-2">
+                                <span>10</span><span>0</span><span>-10</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button onclick="checkRoom27()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Confirmar Temperatura</button>
+                    <div id="room27-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">Temperatura incorreta! Lembre-se, descer abaixo de zero significa números negativos.</div>
+                </div>
+            `;
+        }
+        function changeTemp(d) { tempValue += d; if(tempValue > 10) tempValue=10; if(tempValue < -10) tempValue=-10; renderRoom27(); }
+        function checkRoom27() {
+            if(tempValue === -2) { showModal("Temperatura Correta!", "Exato! 3 desce 3 para chegar a zero, e desce mais 2, chegando a -2°C graus negativos.", "🌡️", "Último Desafio ➔"); }
+            else { document.getElementById('room27-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room27-error').classList.add('opacity-0'), 3500); }
+        }
+
+        // STAGE 28: Expressão com Parênteses
+        function renderRoom28() {
+            let dialsHTML = '';
+            for(let i=0; i<3; i++) {
+                dialsHTML += `
+                    <div class="flex flex-col items-center bg-slate-800 p-3 md:p-6 rounded-2xl border-4 border-slate-700 shadow-inner w-20 md:w-28">
+                        <button onclick="changeParenDial(${i}, 1)" class="w-full h-10 md:h-12 bg-slate-700 hover:bg-indigo-600 rounded-t-lg flex items-center justify-center text-2xl transition-colors active:bg-indigo-400">▲</button>
+                        <div class="h-20 md:h-24 w-full flex items-center justify-center bg-slate-900 border-y-2 border-slate-950 shadow-inner">
+                            <span class="text-5xl md:text-6xl font-title text-purple-400 font-bold">${parenDials[i]}</span>
+                        </div>
+                        <button onclick="changeParenDial(${i}, -1)" class="w-full h-10 md:h-12 bg-slate-700 hover:bg-indigo-600 rounded-b-lg flex items-center justify-center text-2xl transition-colors active:bg-indigo-400">▼</button>
+                    </div>
+                `;
+            }
+            container.innerHTML = `
+                <div class="w-full max-w-4xl flex flex-col items-center animate-float" style="animation-duration: 6s;">
+                    <div class="bg-gradient-to-b from-slate-900 to-purple-950 p-6 md:p-10 rounded-[2rem] border-8 border-purple-900 shadow-[0_0_80px_rgba(147,51,234,0.5)] text-center w-full relative">
+                        <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 text-5xl md:text-6xl">👑</div>
+                        <h2 class="text-3xl md:text-4xl text-white font-title mb-4 mt-6 drop-shadow-md">O Cofre do Mestre</h2>
+                        <p class="text-lg md:text-xl text-purple-200 mb-6 font-bold">A última tranca obedece a regra de ouro: <br><span class="text-yellow-400">Resolva o que está dentro dos Parênteses ( ) PRIMEIRO!</span></p>
+                        
+                        <div class="bg-slate-900/80 p-6 rounded-2xl border-2 border-purple-800/50 inline-block text-2xl md:text-3xl font-bold text-slate-200 mb-8 w-full max-w-md text-left">
+                            <div class="mb-4 flex items-center justify-between"><span>( 10 - 2 ) ÷ 2 =</span> <span class="text-purple-400">1º Dígito</span></div>
+                            <div class="mb-4 flex items-center justify-between"><span>3 × ( 1 + 2 ) =</span> <span class="text-purple-400">2º Dígito</span></div>
+                            <div class="mb-2 flex items-center justify-between"><span>20 ÷ ( 6 - 2 ) =</span> <span class="text-purple-400">3º Dígito</span></div>
+                        </div>
+                        <div class="flex justify-center gap-4 md:gap-8 bg-slate-900/50 p-6 rounded-3xl mx-auto w-fit">${dialsHTML}</div>
+                        <div id="room28-error" class="h-8 mt-6 text-red-400 font-bold text-lg opacity-0 transition-opacity">Combinação final incorreta!</div>
+                    </div>
+                </div>
+            `;
+        }
+        function changeParenDial(index, delta) {
+            parenDials[index] += delta; if (parenDials[index] > 9) parenDials[index] = 0; if (parenDials[index] < 0) parenDials[index] = 9; renderRoom28();
+            // Answers: (10-2)/2 = 8/2 = 4.  3*(1+2) = 3*3 = 9.  20/(6-2) = 20/4 = 5.
+            if (parenDials[0] === 4 && parenDials[1] === 9 && parenDials[2] === 5) { setTimeout(() => nextStage(), 800); }
+        }
+
+        // ======================= WIN SCREEN (STAGE 29) ======================= //
 
         function renderWin() {
             document.getElementById('progress-container').classList.add('hidden');
-
             container.innerHTML = `
-                <div class="text-center max-w-2xl bg-slate-800/80 p-10 rounded-3xl border-2 border-yellow-500/50 shadow-[0_0_50px_rgba(234,179,8,0.3)] relative overflow-hidden">
-                    <div class="absolute inset-0 pointer-events-none opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-yellow-500/20 via-transparent to-transparent"></div>
-                    
-                    <div class="text-8xl mb-6 animate-float">🎓🏆</div>
-                    <h1 class="text-5xl md:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-6 font-title drop-shadow-md">
-                        Você Escapou!
+                <div class="text-center max-w-3xl bg-slate-800/90 p-10 rounded-3xl border-4 border-yellow-500 shadow-[0_0_80px_rgba(234,179,8,0.5)] relative overflow-hidden">
+                    <div class="absolute inset-0 pointer-events-none opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-yellow-500/30 via-transparent to-transparent"></div>
+                    <div class="text-8xl mb-6 animate-float">🎓🏆🎆</div>
+                    <h1 class="text-5xl md:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-6 font-title drop-shadow-md">
+                        VOCÊ VENCEU!
                     </h1>
-                    <p class="text-xl md:text-2xl text-slate-300 mb-8 leading-relaxed">
-                        Parabéns! Você provou que é uma <strong class="text-yellow-400">LENDA DA MATEMÁTICA</strong> do 5º ano.<br>
-                        Sobreviveu a incríveis 20 enigmas passando por conversão de medidas, gráficos, geometria espacial, frações, múltiplos e expressões numéricas!
+                    <p class="text-xl md:text-2xl text-slate-300 mb-8 leading-relaxed font-bold">
+                        A Mansão Inteira foi desvendada!
                     </p>
-                    <button onclick="resetGame()" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-title text-xl py-4 px-10 rounded-full shadow-lg hover:shadow-green-500/50 transition-all transform hover:scale-105">
-                        Jogar Novamente ↺
+                    <p class="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed">
+                        Você completou <span class="text-yellow-400 font-bold">28 DESAFIOS EXTREMOS</span>. Sua lógica em frações, decimais, gráficos, ângulos e equações o transformou na Lenda da Matemática do 5º ano!
+                    </p>
+                    <button onclick="resetGame()" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-title text-xl py-4 px-12 rounded-full shadow-[0_0_30px_rgba(34,197,94,0.6)] hover:shadow-[0_0_50px_rgba(34,197,94,0.8)] transition-all transform hover:scale-105 active:scale-95">
+                        JOGAR NOVAMENTE ↺
                     </button>
                 </div>
             `;
-            
             createConfetti();
         }
 
         function createConfetti() {
-            const colors = ['#facc15', '#38bdf8', '#fbbf24', '#a855f7', '#4ade80'];
-            for(let i=0; i<80; i++) {
+            const colors = ['#facc15', '#38bdf8', '#fbbf24', '#a855f7', '#4ade80', '#ef4444'];
+            for(let i=0; i<120; i++) {
                 const conf = document.createElement('div');
-                conf.style.position = 'fixed';
-                conf.style.width = Math.random() * 10 + 5 + 'px';
-                conf.style.height = Math.random() * 20 + 10 + 'px';
+                conf.style.position = 'fixed'; conf.style.width = Math.random() * 12 + 6 + 'px'; conf.style.height = Math.random() * 24 + 12 + 'px';
                 conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                conf.style.top = '-20px';
-                conf.style.left = Math.random() * 100 + 'vw';
-                conf.style.opacity = Math.random();
-                conf.style.transform = `rotate(${Math.random() * 360}deg)`;
-                conf.style.zIndex = 100;
+                conf.style.top = '-20px'; conf.style.left = Math.random() * 100 + 'vw'; conf.style.opacity = Math.random() + 0.5;
+                conf.style.transform = `rotate(${Math.random() * 360}deg)`; conf.style.zIndex = 100;
                 conf.style.transition = `top ${Math.random() * 3 + 2}s linear, transform ${Math.random() * 3 + 2}s ease-in-out`;
                 document.body.appendChild(conf);
-
-                setTimeout(() => {
-                    conf.style.top = '120vh';
-                    conf.style.transform = `rotate(${Math.random() * 720}deg) translateX(${Math.random() * 100 - 50}px)`;
-                }, 50);
-
+                setTimeout(() => { conf.style.top = '120vh'; conf.style.transform = `rotate(${Math.random() * 720}deg) translateX(${Math.random() * 150 - 75}px)`; }, 50);
                 setTimeout(() => conf.remove(), 5000);
             }
         }
