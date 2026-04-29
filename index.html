@@ -150,9 +150,12 @@
         let doorDials = [0, 0, 0, 0];
         const correctDoorDials = [3, 4, 5, 6];
         let multiplesState = Array(12).fill(false); 
-        let measuresPool = [{id: 1, text: '150 cm', val: 1.5},{id: 2, text: '0,5 km', val: 500},{id: 3, text: '2 m', val: 2},{id: 4, text: '2500 mm', val: 2.5}];
-        let placedMeasures = [null, null, null, null];
-        let selectedMeasure = null; 
+        
+        // Rooms 17 to 20 States
+        let room17Step = 0;
+        const r17Path = [
+            {x:0, y:1}, {x:1, y:1}, {x:2, y:1}, {x:3, y:1}, {x:3, y:2}, {x:3, y:3}, {x:4, y:3}
+        ];
         let chartBars = [0, 0, 0]; 
         let padLockPath = []; 
         let bossDials = [0, 0]; 
@@ -247,16 +250,14 @@
             decimalUnits = { c: 0, d: 0, u: 0 };
             scaleWeight = 0;
             cubeVertices = Array(8).fill(false);
-            doorDials = [0, 0, 0, 0];
-            multiplesState = Array(12).fill(false);
-            measuresPool = [{id: 1, text: '150 cm', val: 1.5}, {id: 2, text: '0,5 km', val: 500}, {id: 3, text: '2 m', val: 2}, {id: 4, text: '2500 mm', val: 2.5}];
-            placedMeasures = [null, null, null, null];
-            selectedMeasure = null;
-            chartBars = [0, 0, 0];
-            padLockPath = [];
-            bossDials = [0, 0];
+        doorDials = [0, 0, 0, 0];
+        multiplesState = Array(12).fill(false);
+        room17Step = 0;
+        chartBars = [0, 0, 0];
+        padLockPath = [];
+        bossDials = [0, 0];
 
-            hardQ1Input = "";
+        hardQ1Input = "";
             hardQ2Dials = [0, 0];
             hardQ3Input = "";
             hardQ4Water = 0;
@@ -835,38 +836,76 @@
         }
 
         function renderRoom17() {
-            let slotsHTML = placedMeasures.map((measure, i) => `<div onclick="clickSlot(${i})" class="w-full h-16 md:h-20 ${measure ? 'bg-sky-600 border-sky-400 text-white' : 'bg-slate-800/50 border-dashed border-slate-500 text-slate-500'} border-2 rounded-xl flex items-center justify-center font-bold text-lg md:text-xl cursor-pointer shadow-lg">${measure ? measure.text : 'Vazio'}</div>`).join('');
-            let poolHTML = measuresPool.map((measure, i) => `<div onclick="clickPool(${measure.id})" class="w-24 md:w-32 h-16 md:h-20 flex items-center justify-center font-bold text-lg rounded-xl cursor-pointer ${selectedMeasure === measure.id ? 'bg-yellow-400 text-slate-900 scale-110 border-2 border-white' : 'bg-slate-700 text-slate-200 border-b-4 border-slate-900'}">${measure.text}</div>`).join('');
+            let gridHTML = '';
+            for(let y=4; y>=0; y--) {
+                for(let x=0; x<=4; x++) {
+                    let isStart = (x===0 && y===0);
+                    let isEnd = (x===4 && y===3);
+                    let isActive = false;
+                    for(let i=0; i<room17Step; i++) {
+                        if (r17Path[i].x === x && r17Path[i].y === y) isActive = true;
+                    }
+                    let isCurrent = false;
+                    if (room17Step > 0 && r17Path[room17Step-1].x === x && r17Path[room17Step-1].y === y) isCurrent = true;
+                    if (room17Step === 0 && isStart) isCurrent = true;
+
+                    let bgClass = "bg-slate-800 border-slate-600 hover:bg-slate-700";
+                    if (isCurrent) bgClass = "bg-yellow-400 border-yellow-200 text-slate-900 scale-105 shadow-[0_0_15px_rgba(250,204,21,0.8)] z-10";
+                    else if (isActive || isStart) bgClass = "bg-sky-600 border-sky-400 text-white";
+                    
+                    let content = "";
+                    if (isStart) content = "A";
+                    else if (isEnd) content = "B";
+
+                    gridHTML += `<div onclick="clickGrid17(${x},${y})" class="w-12 h-12 md:w-16 md:h-16 border-4 flex items-center justify-center font-bold text-xl rounded-xl cursor-pointer transition-all duration-300 ${bgClass}">${content}</div>`;
+                }
+            }
+
             container.innerHTML = `
                 <div class="w-full max-w-4xl flex flex-col items-center">
                     <div class="bg-slate-800/80 p-6 md:p-8 rounded-3xl border border-indigo-500/30 text-center mb-8 w-full shadow-xl">
-                        <h2 class="text-3xl text-sky-400 font-title mb-4 flex items-center justify-center gap-2"><span>📏</span> A Linha de Medidas</h2>
-                        <p class="text-lg text-slate-200">Posicione as tábuas em <span class="text-yellow-400 font-bold">ordem crescente</span> (da MENOR para a MAIOR).</p>
+                        <h2 class="text-3xl text-sky-400 font-title mb-4 flex items-center justify-center gap-2"><span>🗺️</span> O Pátio Guiado</h2>
+                        <p class="text-lg text-slate-200 mb-4">O pátio é um terreno quadriculado. Siga exatamente as instruções para cruzar em segurança:</p>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 text-yellow-300 font-bold text-left inline-block">
+                            "Partindo do ponto A, avance <span class="text-white">1m para CIMA</span>, <span class="text-white">3m para a DIREITA</span>, <span class="text-white">2m para CIMA</span> e <span class="text-white">1m para a DIREITA</span> até o B."
+                        </div>
                     </div>
-                    <div class="w-full max-w-2xl bg-slate-900 p-6 rounded-3xl border-4 border-slate-700 shadow-2xl mb-8 relative">
-                        <div class="absolute w-full h-2 bg-slate-700 top-1/2 left-0 -translate-y-1/2 -z-10"></div>
-                        <div class="grid grid-cols-4 gap-2 md:gap-4 z-10">${slotsHTML}</div>
-                        <div class="flex justify-between text-slate-500 font-bold text-sm mt-4 uppercase"><span>Menor</span><span>Maior</span></div>
+                    <div class="bg-slate-900 p-6 rounded-3xl border-4 border-slate-700 shadow-2xl mb-4">
+                        <div class="grid grid-cols-5 gap-2 md:gap-3 bg-slate-950 p-4 rounded-2xl">
+                            ${gridHTML}
+                        </div>
                     </div>
-                    <div class="flex flex-wrap justify-center gap-4 min-h-[80px]">${poolHTML}</div>
-                    <button onclick="checkRoom17()" class="mt-8 bg-sky-600 hover:bg-sky-500 text-white font-title text-xl py-3 px-10 rounded-full shadow-lg">Construir Ponte</button>
-                    <div id="room17-error" class="h-8 mt-4 text-red-400 font-bold opacity-0 transition-opacity">A ordem está incorreta. Verifique as conversões!</div>
+                    <div class="text-slate-400 text-sm mb-4">Clique nos quadrados para traçar o caminho avançando 1m por vez.</div>
+                    <div id="room17-error" class="h-8 mt-2 text-red-400 font-bold opacity-0 transition-opacity">Passo incorreto! Você pisou fora do caminho seguro e voltou ao início.</div>
                 </div>
             `;
         }
-        function clickPool(id) { selectedMeasure = selectedMeasure === id ? null : id; renderRoom17(); }
-        function clickSlot(index) {
-            if (selectedMeasure !== null) {
-                let poolIdx = measuresPool.findIndex(m => m.id === selectedMeasure);
-                if (poolIdx > -1) { if (placedMeasures[index] !== null) measuresPool.push(placedMeasures[index]); placedMeasures[index] = measuresPool[poolIdx]; measuresPool.splice(poolIdx, 1); selectedMeasure = null; }
-            } else if (placedMeasures[index] !== null) { measuresPool.push(placedMeasures[index]); placedMeasures[index] = null; }
-            renderRoom17();
-        }
-        function checkRoom17() {
-            if (placedMeasures.some(m => m === null)) { document.getElementById('room17-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room17-error').classList.add('opacity-0'), 2000); return; }
-            let isCorrect = placedMeasures.every((val, i, arr) => !i || (val.val >= arr[i - 1].val));
-            if(isCorrect) { showModal("Ponte Construída!", "Perfeito! 150 cm (1,5m) < 2m < 2500 mm (2,5m) < 0,5 km (500m).", "🌉", "Avançar ➔"); }
-            else { document.getElementById('room17-error').classList.remove('opacity-0'); setTimeout(() => document.getElementById('room17-error').classList.add('opacity-0'), 3000); }
+        
+        function clickGrid17(x, y) {
+            // Ignorar se clicar no próprio quadrado que já está
+            let currX = room17Step > 0 ? r17Path[room17Step-1].x : 0;
+            let currY = room17Step > 0 ? r17Path[room17Step-1].y : 0;
+            if (x === currX && y === currY) return;
+
+            if (room17Step < r17Path.length) {
+                let expected = r17Path[room17Step];
+                if (expected.x === x && expected.y === y) {
+                    room17Step++;
+                    renderRoom17();
+                    if (room17Step === r17Path.length) {
+                        setTimeout(() => showModal("Travessia Segura!", "Perfeito! Você seguiu as coordenadas exatas no plano do terreno.", "🚶", "Avançar ➔"), 500);
+                    }
+                } else {
+                    document.getElementById('room17-error').classList.remove('opacity-0');
+                    document.querySelector('.bg-slate-950').classList.add('shake');
+                    setTimeout(() => {
+                        document.querySelector('.bg-slate-950').classList.remove('shake');
+                        document.getElementById('room17-error').classList.add('opacity-0');
+                        room17Step = 0; 
+                        renderRoom17();
+                    }, 1500);
+                }
+            }
         }
 
         function renderRoom18() {
